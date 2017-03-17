@@ -1,0 +1,17 @@
+.browser-button{
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: transparent;
+    
+}
+
+#address-field{
+    -fx-padding: 5px;
+    -fx-border-insets: 5px;
+    -fx-background-insets: 5px;
+}
+
+#search-container{
+    -fx-background-color: linear-gradient(to bottom right, #f53dff, #6a5acd);
+}

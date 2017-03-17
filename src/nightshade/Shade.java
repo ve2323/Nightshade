@@ -3,6 +3,7 @@ package nightshade;
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
  
@@ -11,9 +12,11 @@ public class Shade extends Application {
     @Override
     public void start(Stage primarystage) {
     	
-        primarystage.setTitle("Shade");
+        primarystage.setTitle("Nightshade");
+        primarystage.getIcons().add(new Image("/assets/nightshade_stage.png"));
         primarystage.setMaximized(true);
         Scene scene = new Scene(new Group());
+        scene.getStylesheets().add("/assets/shade.css");
         
         // main container
         BorderPane contentPane = new BorderPane();
