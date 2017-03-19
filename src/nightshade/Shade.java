@@ -20,19 +20,11 @@ public class Shade extends Application {
         
         // main container
         BorderPane contentPane = new BorderPane();
-        
-        // browser container
-        BorderPane browserView = new BorderPane();
-        
         scene.setRoot(contentPane);
         
         // create browser
-        Browser browser = new Browser(browserView,contentPane);
-        browser.addBrowser();
-        
-        // create console
-        Console console = new Console(scene,contentPane);
-        console.addConsole();
+        Browser browser = new Browser(scene, contentPane);
+        browser.initBrowser();
         
         // set scene and show
         primarystage.setScene(scene);

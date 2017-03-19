@@ -22,11 +22,11 @@ public class Console {
 	
 	// cross class variables
 	private Scene scene;
-	private BorderPane contentPane;
+	private BorderPane browserPane;
 	
-	public Console(Scene scene,BorderPane contentPane){
+	public Console(Scene scene,BorderPane browserPane){
 		this.scene = scene;
-		this.contentPane = contentPane;
+		this.browserPane = browserPane;
 	}
 	
 	// open console on key combination
@@ -52,7 +52,7 @@ public class Console {
 	    	consoleOpen = true;
 	    	
 	    	Tab tabOne = new Tab();
-	    	tabOne.setText("new tab");
+	    	tabOne.setText("Console");
 	    	tabOne.setContent(tabArea);
 	    	tabmaster.getTabs().add(tabOne);
 	    	
@@ -62,13 +62,13 @@ public class Console {
 	    	tabContainer.setPrefWidth(consoleWidth);
 	    	scene.widthProperty().addListener((obs, oldVal, newVal) -> {tabContainer.setPrefWidth((double)newVal/3);});
 	    	
-	    	contentPane.setRight(tabContainer);
+	    	browserPane.setRight(tabContainer);
 	    	
 	    } 
 	    // close console
 	    else{
 	    	consoleOpen = false;
-	    	contentPane.setRight(null);
+	    	browserPane.setRight(null);
 	    	tabmaster.getTabs().remove(0);
 	    }
 	    

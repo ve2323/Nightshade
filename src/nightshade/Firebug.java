@@ -4,22 +4,42 @@ import org.w3c.dom.Document;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.web.WebEngine;
 
 public class Firebug {
 	
 	private WebEngine engine;
+	private BorderPane browserView;
+	private boolean enabled = false;
 	
-	public Firebug(WebEngine engine){
+	public Firebug(WebEngine engine, BorderPane browserView){
 		this.engine = engine;
+		this.browserView = browserView;
 	}
 	
 	public void addFirebug(){
 		engine.documentProperty().addListener(new ChangeListener<Document>() {
 			@Override
-			public void changed(ObservableValue<? extends Document> prop, 
-					    Document oldDoc, Document newDoc) {
-				enableFirebug(engine);
+			public void changed(ObservableValue<? extends Document> prop,Document oldDoc, Document newDoc) {
+				if(!enabled){
+					// ctrl+shift+F
+					KeyCombination consoleCombo = new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
+					browserView.setOnKeyPressed(new EventHandler<KeyEvent>(){
+				        @Override
+				        public void handle(KeyEvent event){
+					        if (consoleCombo.match(event)){
+					        	enabled = true;
+					        	enableFirebug(engine);
+					        }
+				        }
+				    });
+				}
 			}
 		});
 		

@@ -1,11 +1,16 @@
 package nightshade;
 
+import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
 import javafx.concurrent.Worker.State;
 import javafx.event.EventHandler;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -19,34 +24,47 @@ import javafx.scene.web.WebView;
 public class Browser{
 	
 	// native class variables
-	private WebView browser = new WebView();
-	private WebEngine webEngine = browser.getEngine();
-	private TextField addressField = new TextField();
 	
 	// cross class variables
-	private BorderPane browserView;
 	private BorderPane contentPane;
+	private Scene scene;
 	
-	public Browser(BorderPane browserView, BorderPane contentPane){
-		this.browserView = browserView;
+	public Browser(Scene scene, BorderPane contentPane){
 		this.contentPane = contentPane;
+		this.scene = scene;
 	}
 	
 	// create and add browser view with all required components
-	public void addBrowser(){
+	public BorderPane addBrowser(Tab tab){
 		
-		addSearchbar();
+		// create new webEngine
+		WebView browser = new WebView();
+		WebEngine webEngine = browser.getEngine();
+		TextField addressField = new TextField();
+		BorderPane browserView = new BorderPane();
+		
+		browse(webEngine, "https://www.google.com/");
+		
+		// create search bar
+		addSearchbar(webEngine, browserView, addressField, tab);
+		
+		// set browser content
 		browserView.setCenter(browser);
-		contentPane.setCenter(browserView);
 		
-		Firebug bug = new Firebug(webEngine);
+		// create console
+        Console console = new Console(scene,browserView);
+        console.addConsole();
+		
+        // create firebug
+		Firebug bug = new Firebug(webEngine, browserView);
 		bug.addFirebug();
 		
-		browse("https://www.google.com/");
+		return browserView;
+		
 	}
 	
 	// create and add searchbar
-	private void addSearchbar(){
+	private void addSearchbar(WebEngine webEngine, BorderPane browserView, TextField addressField,Tab tab){
 		
 		HBox searchContainer = new HBox();
 		searchContainer.setId("search-container");
@@ -70,13 +88,17 @@ public class Browser{
 		addressField.setPrefWidth(searchContainer.getWidth()/2);
 		searchContainer.widthProperty().addListener((obs, oldVal, newVal) -> {addressField.setPrefWidth((double)newVal/2);});
 		
-		// append url to addressfield on trigger
+		// append url to address field on trigger
         webEngine.getLoadWorker().stateProperty().addListener(new ChangeListener<State>() {
     		@SuppressWarnings("rawtypes")
     		@Override public void changed(ObservableValue ov, State oldState, State newState) {
               if (newState == Worker.State.SUCCEEDED) {
+            	tab.setText(webEngine.getTitle());
                 addressField.clear();
                 addressField.appendText(webEngine.getLocation());
+              }
+              if(newState == Worker.State.RUNNING){
+            	  tab.setText("Loading...");
               }
             }
         });
@@ -94,7 +116,7 @@ public class Browser{
 		EventHandler<KeyEvent> keyEventHandler = new EventHandler<KeyEvent>() {
             public void handle(final KeyEvent keyEvent) {
                 if (keyEvent.getCode() == KeyCode.ENTER) {
-                	browse(addressField.getText());
+                	browse(webEngine, addressField.getText());
                 }
             }
         };
@@ -107,8 +129,41 @@ public class Browser{
 	}
 	
 	// trigger browse
-	public void browse(String address){
+	public void browse(WebEngine webEngine, String address){
         webEngine.load(address);
 	}
+	
+	// trigger browse
+	public void initBrowser(){
+		
+		final TabPane tabPane = new TabPane();
+	    final Tab newTab = new Tab("+");
+	    newTab.setClosable(false);
+	    tabPane.getTabs().add(newTab);
+	    createAndSelectNewTab(tabPane);
+
+	    tabPane.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Tab>() {
+	      @Override
+	      public void changed(ObservableValue<? extends Tab> observable,
+	          Tab oldSelectedTab, Tab newSelectedTab) {
+	        if (newSelectedTab == newTab) {
+	          createAndSelectNewTab(tabPane);
+	        }
+	      }
+	    });
+	    
+	    contentPane.setCenter(tabPane);
+	    
+	}
+	
+	private Tab createAndSelectNewTab(final TabPane tabPane) {
+	    Tab tab = new Tab("Loading...");
+	    final ObservableList<Tab> tabs = tabPane.getTabs();
+	    tab.closableProperty().bind(Bindings.size(tabs).greaterThan(2));
+	    tabs.add(tabs.size() - 1, tab);
+	    tab.setContent(addBrowser(tab));
+	    tabPane.getSelectionModel().select(tab);
+	    return tab;
+	  }
 	
 }
