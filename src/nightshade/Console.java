@@ -9,14 +9,12 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
 
 public class Console {
 	
 	// class native variables
 	private boolean consoleOpen = false;
 	private TabPane tabmaster = new TabPane();
-	private StackPane tabArea = new StackPane();
 	private BorderPane tabContainer = new BorderPane();
 	private double consoleWidth;
 	
@@ -51,11 +49,15 @@ public class Console {
 	    if(!consoleOpen){
 	    	consoleOpen = true;
 	    	
-	    	Tab tabOne = new Tab();
-	    	tabOne.setText("Console");
-	    	tabOne.setContent(tabArea);
-	    	tabmaster.getTabs().add(tabOne);
+	    	// console tabs
+	    	Tab console = new Tab();
+	    	console.setText("Console");
 	    	
+	    	// console content
+	    	ConsoleTools.ConsoleSubtabs consoleTools = new ConsoleTools().new ConsoleSubtabs(tabmaster, console);
+	    	consoleTools.addTools();
+	    	
+	    	// console settings
 	    	tabContainer.setCenter(tabmaster);
 	    	tabContainer.prefHeightProperty().bind(scene.heightProperty());
 	    	consoleWidth = scene.getWidth()/3;
