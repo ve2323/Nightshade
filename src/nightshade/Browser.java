@@ -1,14 +1,17 @@
 package nightshade;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
 import javafx.concurrent.Worker.State;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.Scene;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Button;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
@@ -16,22 +19,30 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
 
 public class Browser{
 	
 	// native class variables
+	private boolean stageMaxed = true;
+	private double xOffset,yOffset;
+	Rectangle2D primaryScreenBounds;
 	
 	// cross class variables
 	private BorderPane contentPane;
-	private Scene scene;
+	private Stage primarystage;
 	
-	public Browser(Scene scene, BorderPane contentPane){
+	public Browser(Stage primarystage, BorderPane contentPane){
 		this.contentPane = contentPane;
-		this.scene = scene;
+		this.primarystage = primarystage;
 	}
 	
 	// create and add browser view with all required components
@@ -42,20 +53,23 @@ public class Browser{
 		WebEngine webEngine = browser.getEngine();
 		TextField addressField = new TextField();
 		BorderPane browserView = new BorderPane();
+		SplitPane browserContainer = new SplitPane();
 		
 		browse(webEngine, "https://www.google.com/");
 		
 		// create search bar
 		addSearchbar(webEngine, browserView, addressField, tab);
 		
+		browserContainer.getItems().add(browser);
+		
 		// set browser content
-		browserView.setCenter(browser);
+		browserView.setCenter(browserContainer);
 		
 		// create console
-        Console console = new Console(scene,browserView);
+        Console console = new Console(browserContainer);
         console.addConsole();
 		
-        // create firebug
+        // create fire bug
 		Firebug bug = new Firebug(webEngine, browserView);
 		bug.addFirebug();
 		
@@ -63,7 +77,7 @@ public class Browser{
 		
 	}
 	
-	// create and add searchbar
+	// create and add search bar
 	private void addSearchbar(WebEngine webEngine, BorderPane browserView, TextField addressField,Tab tab){
 		
 		HBox searchContainer = new HBox();
@@ -137,6 +151,21 @@ public class Browser{
 	public void initBrowser(){
 		
 		final TabPane tabPane = new TabPane();
+		tabPane.setId("browser-tabs");
+		
+		makedraggable(tabPane);
+		
+		HBox hbox = new HBox();
+		hbox.getChildren().addAll(minButton("minimize"),maxButton("maximize"), exitButton("exit"));
+		AnchorPane anchor = new AnchorPane();
+		anchor.getChildren().addAll(tabPane, hbox);
+        AnchorPane.setTopAnchor(hbox, 3.0);
+        AnchorPane.setRightAnchor(hbox, 5.0);
+        AnchorPane.setTopAnchor(tabPane, 1.0);
+        AnchorPane.setRightAnchor(tabPane, 1.0);
+        AnchorPane.setLeftAnchor(tabPane, 1.0);
+        AnchorPane.setBottomAnchor(tabPane, 1.0);
+		
 	    final Tab newTab = new Tab("+");
 	    newTab.setClosable(false);
 	    tabPane.getTabs().add(newTab);
@@ -152,7 +181,7 @@ public class Browser{
 	      }
 	    });
 	    
-	    contentPane.setCenter(tabPane);
+	    contentPane.setCenter(anchor);
 	    
 	}
 	
@@ -164,6 +193,135 @@ public class Browser{
 	    tab.setContent(addBrowser(tab));
 	    tabPane.getSelectionModel().select(tab);
 	    return tab;
-	  }
+    }
+	
+	private Button minButton(String iconName) {
+        Button button = new Button();
+        button.getStyleClass().add("util-buttons-tray-max");
+        button.getStyleClass().add("util-buttons");
+        Image buttonImage = new Image(getClass().getResourceAsStream("/assets/nightshade_tray.png"));
+		button.setGraphic(new ImageView(buttonImage));
+        button.setMinWidth(Region.USE_PREF_SIZE);
+        
+        button.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+            	Stage stage = (Stage)((Button)actionEvent.getSource()).getScene().getWindow();
+            	stage.setIconified(true);
+            }
+        });
+        
+        return button;
+    }
+	
+	private Button maxButton(String iconName) {
+        Button button = new Button();
+        button.getStyleClass().add("util-buttons-tray-max");
+        button.getStyleClass().add("util-buttons");
+        Image buttonImage = new Image(getClass().getResourceAsStream("/assets/nightshade_max_min.png"));
+		button.setGraphic(new ImageView(buttonImage));
+        button.setMinWidth(Region.USE_PREF_SIZE);
+        
+        button.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+            	if(stageMaxed){
+            		stageMaxed = false;
+            		primarystage.setMaximized(false);
+            	} else{
+            		stageMaxed = true;
+            		primarystage.setMaximized(true);
+            	}
+            }
+        });
+        
+        return button;
+    }
+	
+	private Button exitButton(String iconName) {
+        Button button = new Button();
+        button.getStyleClass().add("util-buttons-close");
+        button.getStyleClass().add("util-buttons");
+        Image buttonImage = new Image(getClass().getResourceAsStream("/assets/nightshade_close.png"));
+		button.setGraphic(new ImageView(buttonImage));
+        button.setMinWidth(Region.USE_PREF_SIZE);
+        
+        button.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+            	Platform.exit();
+            }
+        });
+        
+        return button;
+    }
+	
+	private void makedraggable(TabPane tabpane){
+		
+		tabpane.setOnMousePressed(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+            	primaryScreenBounds = Screen.getPrimary().getVisualBounds();
+                xOffset = primarystage.getX() - event.getScreenX();
+                yOffset = primarystage.getY() - event.getScreenY();
+            }
+        });
+		
+		tabpane.setOnMouseDragged(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+            	if(!stageMaxed){
+            		
+            		// position x
+            		// if mouse position is not less or more than min/max
+            		// and does not pass max screen width - 10
+            		if(
+	    				!(event.getScreenX() <= primaryScreenBounds.getMinX()) && 
+	    				!(event.getScreenX() >= primaryScreenBounds.getMaxX()) &&
+	    				!(event.getScreenX() > primaryScreenBounds.getWidth()-10)
+    				){
+            			primarystage.setX(event.getScreenX() + xOffset);
+            		}
+            		
+            		// position y
+            		// if mouse position is not less or more than min/max
+            		// and does not pass max screen height - 10
+            		if(
+        				!(event.getScreenY() <= primaryScreenBounds.getMinY()) && 
+	    				!(event.getScreenY() >= primaryScreenBounds.getMaxY()) &&
+	    				!(event.getScreenY() >= primaryScreenBounds.getHeight()-10)
+    				){
+            			primarystage.setY(event.getScreenY() + yOffset);
+            		}
+            	}
+            }
+        });
+		
+		tabpane.setOnMouseReleased(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+            	
+            	// x position
+            	// if mouse position+5 is more or equal to max screen bounds
+            	// or if mouse position-5 is less or equal to min screen bounds
+            	// make stage maximized
+            	if((event.getScreenX()+10) >= primaryScreenBounds.getMaxX() || (event.getScreenX()-10) <= primaryScreenBounds.getMinX()){
+            		stageMaxed = true;
+            		primarystage.setMaximized(true);
+            	}
+            	
+            	// y position
+            	// if mouse position+5 is more or equal to max screen bounds
+            	// or if mouse position-5 is less or equal to min screen bounds
+            	// make stage maximized
+            	if((event.getScreenY()+10) >= primaryScreenBounds.getMaxY() || (event.getScreenY()-10) <= primaryScreenBounds.getMinY()){
+            		stageMaxed = true;
+            		primarystage.setMaximized(true);
+            	}
+            }
+        });
+		
+	}
+	
 	
 }

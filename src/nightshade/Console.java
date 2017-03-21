@@ -1,7 +1,7 @@
 package nightshade;
 
 import javafx.event.EventHandler;
-import javafx.scene.Scene;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.KeyCode;
@@ -10,29 +10,28 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 
-public class Console {
+public class Console extends Thread{
 	
 	// class native variables
 	private boolean consoleOpen = false;
 	private TabPane tabmaster = new TabPane();
 	private BorderPane tabContainer = new BorderPane();
-	private double consoleWidth;
 	
 	// cross class variables
-	private Scene scene;
-	private BorderPane browserPane;
+	private SplitPane browserContainer;
 	
-	public Console(Scene scene,BorderPane browserPane){
-		this.scene = scene;
-		this.browserPane = browserPane;
+	public Console(SplitPane browserContainer){
+		this.browserContainer = browserContainer;
 	}
 	
 	// open console on key combination
 	public void addConsole(){
 		
+		tabmaster.setId("console-tabs");
+		
 		// ctrl+d
 		KeyCombination consoleCombo = new KeyCodeCombination(KeyCode.D, KeyCombination.CONTROL_DOWN);
-		scene.setOnKeyPressed(new EventHandler<KeyEvent>(){
+		browserContainer.setOnKeyPressed(new EventHandler<KeyEvent>(){
 	        @Override
 	        public void handle(KeyEvent event){
 		        if (consoleCombo.match(event)){
@@ -59,18 +58,15 @@ public class Console {
 	    	
 	    	// console settings
 	    	tabContainer.setCenter(tabmaster);
-	    	tabContainer.prefHeightProperty().bind(scene.heightProperty());
-	    	consoleWidth = scene.getWidth()/3;
-	    	tabContainer.setPrefWidth(consoleWidth);
-	    	scene.widthProperty().addListener((obs, oldVal, newVal) -> {tabContainer.setPrefWidth((double)newVal/3);});
 	    	
-	    	browserPane.setRight(tabContainer);
+	    	browserContainer.getItems().add(tabContainer);
 	    	
 	    } 
 	    // close console
 	    else{
 	    	consoleOpen = false;
-	    	browserPane.setRight(null);
+	    	browserContainer.getItems().remove(tabContainer);
+	    	//browserPane.setRight(null);
 	    	tabmaster.getTabs().remove(0);
 	    }
 	    

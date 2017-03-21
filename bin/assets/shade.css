@@ -1,21 +1,165 @@
-.browser-button{
-    -fx-border-color: transparent;
-    -fx-border-width: 0;
-    -fx-background-radius: 0;
-    -fx-background-color: transparent;
-    
-}
-
-#address-field{
-    -fx-padding: 5px;
-    -fx-border-insets: 5px;
-    -fx-background-insets: 5px;
-}
-
-#search-container{
-    -fx-background-color: linear-gradient(to bottom right, #f53dff, #6a5acd);
-}
-
-#browser-view{
+/* search container */
 	
-}
+	/* browser buttons */
+	
+		.browser-button{
+			-fx-padding: 5px;
+		    -fx-border-insets: 5px;
+		    -fx-background-insets: 5px;
+		    -fx-border-color: transparent;
+		    -fx-border-width: 0;
+		    -fx-background-radius: 2;
+		    -fx-background-color: transparent;
+		    -fx-background-color: linear-gradient(to bottom right, #51cce8, #722ecc);
+		}
+		
+		.browser-button:hover{
+			-fx-background-color: linear-gradient(to bottom right, #3443b5, #51cce8);
+		}
+	
+	/* browser buttons end */
+	
+	/* address field */
+	
+		#address-field{
+		    -fx-padding: 10px;
+		    -fx-border-insets: 5px;
+		    -fx-background-insets: 5px;
+		    -fx-background-radius: 6;
+		    -fx-effect: dropshadow( three-pass-box ,  #8c49e5, 0,0,2,2 );
+		}
+		
+		#address-field:hover{
+			-fx-border-insets: 3px;
+		    -fx-background-insets: 3px;
+		    -fx-background-radius: 2;
+		    -fx-effect: dropshadow( three-pass-box ,  #995ef2, 0,0,2,2 );
+		}
+	
+	/* address field end */
+	
+	/* search container */
+	
+		#search-container{
+			-fx-border-color: linear-gradient(to bottom right, #2a0549, #440a75) #678cfc #678cfc #678cfc;
+			-fx-border-width: 3px 0px 0px 0px;
+		    -fx-background-color: #602077;
+		}
+	
+	/* search container end */
+
+/* search container end */
+
+/* util buttons */
+
+	.util-buttons{
+		-fx-border-color: transparent;
+	    -fx-border-width: 0;
+	    -fx-padding: 3px;
+	    -fx-border-insets: 3px 10px 3px 10px;
+	    -fx-background-insets: 3px;
+	    -fx-background-radius: 2;
+	    -fx-background-color: transparent;
+	}
+	
+	.util-buttons-tray-max:hover{
+		-fx-background-color: #2bb9f2;
+	}
+	
+	.util-buttons-close:hover{
+		-fx-background-color: #e00404;
+	}
+
+/* util buttons end */
+
+/* browser tabs */
+
+	#browser-tabs > .tab-header-area > .tab-header-background {
+	    -fx-background-color: linear-gradient(to bottom right, #602077, #1960a8);
+	}
+	
+	#browser-tabs > .tab-header-area > .headers-region > .tab {
+	    -fx-background-color: linear-gradient(to bottom right, #1fc2f4, #9c5dfc);
+	    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+	}
+	
+	#browser-tabs > .tab-header-area > .headers-region > .tab:selected {
+	    -fx-background-color: linear-gradient(to bottom right, #9c5dfc, #1fc2f4);
+	    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+	}
+	
+	#browser-tabs > .tab-header-area > .headers-region > .tab:hover {
+	    -fx-background-color: linear-gradient(to bottom right, #30c9e8, #ee3dff);
+	    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+	}
+	
+	#browser-tabs{
+		-fx-tab-max-width:100px;
+	}
+
+/* browser tabs end */
+
+/* console */
+
+	#console-tabs > .tab-header-area > .tab-header-background {
+	    -fx-background-color: linear-gradient(to bottom right, #602077, #1960a8);
+	}
+	
+	#console-tabs > .tab-header-area > .headers-region > .tab {
+	    -fx-background-color: linear-gradient(to bottom right, #1fc2f4, #9c5dfc);
+	    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+	}
+	
+	#console-tabs > .tab-header-area > .headers-region > .tab:selected {
+	    -fx-background-color: linear-gradient(to bottom right, #9c5dfc, #1fc2f4);
+	    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+	}
+	
+	#console-tabs > .tab-header-area > .headers-region > .tab:hover {
+	    -fx-background-color: linear-gradient(to bottom right, #30c9e8, #ee3dff);
+	    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+	}
+	
+		/* console subtabs */
+		
+			#console-subtabs > .tab-header-area > .tab-header-background {
+			    -fx-background-color: linear-gradient(to bottom right, #602077, #1960a8);
+			    -fx-border-color: linear-gradient(to bottom right, #2a0549, #440a75) transparent transparent transparent;
+			}
+			
+			#console-subtabs > .tab-header-area > .headers-region > .tab {
+			    -fx-background-color: linear-gradient(to bottom right, #1fc2f4, #9c5dfc);
+			    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+			}
+			
+			#console-subtabs > .tab-header-area > .headers-region > .tab:selected {
+			    -fx-background-color: linear-gradient(to bottom right, #9c5dfc, #1fc2f4);
+			    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+			}
+			
+			#console-subtabs > .tab-header-area > .headers-region > .tab:hover {
+			    -fx-background-color: linear-gradient(to bottom right, #30c9e8, #ee3dff);
+			    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+			}
+			
+				/* freestyle */
+				
+					#freestyle-command{
+						-fx-control-inner-background:#000000;
+						-fx-highlight-fill: #00ff00;
+						-fx-highlight-text-fill: #000000;
+						-fx-text-fill: #00ff00;
+					}
+					
+					#freestyle-output{
+						-fx-control-inner-background:#000000;
+						-fx-highlight-fill: #00ff00;
+						-fx-highlight-text-fill: #000000;
+						-fx-text-fill: #00ff00;
+					}
+				
+				/* freestyle end */
+		
+		/* console subtabs */
+
+/* console end */

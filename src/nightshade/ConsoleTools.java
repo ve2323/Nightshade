@@ -35,6 +35,8 @@ public class ConsoleTools {
 		
 		public void addTools(){
 			
+			subTabs.setId("console-subtabs");
+			
 			// add freestyle tab
 			subTabs.getTabs().add(freestyle());
 			
@@ -53,8 +55,10 @@ public class ConsoleTools {
 			free.setClosable(false);
 			
 			TextArea command = new TextArea();
+			command.setId("freestyle-command");
 			command.setWrapText(true);
 			TextArea output = new TextArea();
+			output.setId("freestyle-output");
 			output.setWrapText(true);
 			
 			SplitPane freestyleContainer = new SplitPane(command,output);
