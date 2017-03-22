@@ -52,9 +52,16 @@ public class Console extends Thread{
 	    	Tab console = new Tab();
 	    	console.setText("Console");
 	    	
+	    	Tab system = new Tab();
+	    	system.setText("System");
+	    	
 	    	// console content
 	    	ConsoleTools.ConsoleSubtabs consoleTools = new ConsoleTools().new ConsoleSubtabs(tabmaster, console);
 	    	consoleTools.addTools();
+	    	
+	    	// system content
+	    	ConsoleTools.SystemSubtabs systemTools = new ConsoleTools().new SystemSubtabs(tabmaster, system);
+	    	systemTools.addTools();
 	    	
 	    	// console settings
 	    	tabContainer.setCenter(tabmaster);
@@ -66,7 +73,9 @@ public class Console extends Thread{
 	    else{
 	    	consoleOpen = false;
 	    	browserContainer.getItems().remove(tabContainer);
-	    	//browserPane.setRight(null);
+	    	
+	    	// remove tabs
+	    	tabmaster.getTabs().remove(0);
 	    	tabmaster.getTabs().remove(0);
 	    }
 	    

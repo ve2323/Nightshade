@@ -38,15 +38,29 @@
 	
 	/* address field end */
 	
-	/* search container */
+	/* search */
 	
 		#search-container{
 			-fx-border-color: linear-gradient(to bottom right, #2a0549, #440a75) #678cfc #678cfc #678cfc;
 			-fx-border-width: 3px 0px 0px 0px;
 		    -fx-background-color: #602077;
 		}
+		
+		/* progress */
+		
+			#status-field{
+				-fx-pref-width: 80px;
+				-fx-text-fill: white;
+				-fx-font-size: 14pt;
+				-fx-background-insets: 0 0 0 0, 0, 0, 0;
+			    -fx-background-radius: 0 0 0 0, 0, 0, 0;
+			    -fx-border-width: 0 0 0 0, 0, 0, 0;
+				-fx-background-color: transparent;
+			}
+		
+		/* progress end */
 	
-	/* search container end */
+	/* searchend */
 
 /* search container end */
 
@@ -72,10 +86,23 @@
 
 /* util buttons end */
 
+/* browser container */
+
+	#browser-container > .split-pane-divider{
+		-fx-background-color: #dae5e5;
+		-fx-border-color: transparent transparent transparent #0b0b5b;
+	}
+
+/* browser container end */
+
 /* browser tabs */
 
 	#browser-tabs > .tab-header-area > .tab-header-background {
 	    -fx-background-color: linear-gradient(to bottom right, #602077, #1960a8);
+	}
+	
+	#browser-tabs > .tab-header-area > .tab-header-background:pressed {
+	    -fx-background-color: linear-gradient(to bottom right, #e98af2, #89e4f1);
 	}
 	
 	#browser-tabs > .tab-header-area > .headers-region > .tab {
@@ -143,7 +170,12 @@
 			}
 			
 				/* freestyle */
-				
+					
+					#freestyle-container > .split-pane-divider{
+						-fx-background-color: #dae5e5;
+						-fx-border-color: #0b0b5b transparent #0b0b5b transparent;
+					}
+					
 					#freestyle-command{
 						-fx-control-inner-background:#000000;
 						-fx-highlight-fill: #00ff00;
@@ -163,3 +195,42 @@
 		/* console subtabs */
 
 /* console end */
+
+/* system */
+
+	/* system subtabs */
+	
+		#system-subtabs > .tab-header-area > .tab-header-background {
+		    -fx-background-color: linear-gradient(to bottom right, #602077, #1960a8);
+		    -fx-border-color: linear-gradient(to bottom right, #2a0549, #440a75) transparent transparent transparent;
+		}
+		
+		#system-subtabs > .tab-header-area > .headers-region > .tab {
+		    -fx-background-color: linear-gradient(to bottom right, #1fc2f4, #9c5dfc);
+		    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+		}
+		
+		#system-subtabs > .tab-header-area > .headers-region > .tab:selected {
+		    -fx-background-color: linear-gradient(to bottom right, #9c5dfc, #1fc2f4);
+		    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+		}
+		
+		#system-subtabs > .tab-header-area > .headers-region > .tab:hover {
+		    -fx-background-color: linear-gradient(to bottom right, #30c9e8, #ee3dff);
+		    -fx-border-color: #0b0b5b #0b0b5b transparent #0b0b5b;
+		}
+	
+		/* info */
+		
+			#info-area{
+				-fx-control-inner-background:#000000;
+				-fx-highlight-fill: #00ff00;
+				-fx-highlight-text-fill: #000000;
+				-fx-text-fill: #00ff00;
+			}
+		
+		/* info end */
+	
+	/* system subtabs end */
+
+/* system end */

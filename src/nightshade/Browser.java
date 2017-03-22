@@ -52,13 +52,15 @@ public class Browser{
 		WebView browser = new WebView();
 		WebEngine webEngine = browser.getEngine();
 		TextField addressField = new TextField();
+		TextField statusField = new TextField();
 		BorderPane browserView = new BorderPane();
 		SplitPane browserContainer = new SplitPane();
+		browserContainer.setId("browser-container");
 		
 		browse(webEngine, "https://www.google.com/");
 		
 		// create search bar
-		addSearchbar(webEngine, browserView, addressField, tab);
+		addSearchbar(webEngine, browserView, addressField, statusField, tab);
 		
 		browserContainer.getItems().add(browser);
 		
@@ -78,7 +80,7 @@ public class Browser{
 	}
 	
 	// create and add search bar
-	private void addSearchbar(WebEngine webEngine, BorderPane browserView, TextField addressField,Tab tab){
+	private void addSearchbar(WebEngine webEngine, BorderPane browserView, TextField addressField, TextField statusField, Tab tab){
 		
 		HBox searchContainer = new HBox();
 		searchContainer.setId("search-container");
@@ -102,6 +104,22 @@ public class Browser{
 		addressField.setPrefWidth(searchContainer.getWidth()/2);
 		searchContainer.widthProperty().addListener((obs, oldVal, newVal) -> {addressField.setPrefWidth((double)newVal/2);});
 		
+		statusField.setId("status-field");
+		statusField.setEditable(false);
+		
+		// view load progress
+		webEngine.getLoadWorker().progressProperty().addListener((observable, oldValue, newValue) -> {
+		    if(newValue.doubleValue() > 0.0){
+		    	statusField.clear();
+		    	String progress = String.format("%.2f", newValue.doubleValue()).replace(",", "");
+		    	if(progress.indexOf("0")==0){
+		    		tab.setText( progress.substring(1) + " %");
+		    	} else{
+		    		tab.setText( progress + " %");
+		    	}
+		    }
+		});
+		
 		// append url to address field on trigger
         webEngine.getLoadWorker().stateProperty().addListener(new ChangeListener<State>() {
     		@SuppressWarnings("rawtypes")
@@ -110,9 +128,6 @@ public class Browser{
             	tab.setText(webEngine.getTitle());
                 addressField.clear();
                 addressField.appendText(webEngine.getLocation());
-              }
-              if(newState == Worker.State.RUNNING){
-            	  tab.setText("Loading...");
               }
             }
         });
@@ -137,14 +152,18 @@ public class Browser{
 
         addressField.setOnKeyPressed(keyEventHandler);
 		
-		searchContainer.getChildren().addAll(goBack,reload,goForward,addressField);
+		searchContainer.getChildren().addAll(goBack,reload,goForward,addressField,statusField);
 		
 		browserView.setTop(searchContainer);
 	}
 	
 	// trigger browse
 	public void browse(WebEngine webEngine, String address){
-        webEngine.load(address);
+		if(address.contains(".")){
+			webEngine.load(address);
+		} else{
+			webEngine.load("https://www.google.se/search?q=" + address.replace(" ", "%20") + "&*");
+		}
 	}
 	
 	// trigger browse
@@ -186,7 +205,7 @@ public class Browser{
 	}
 	
 	private Tab createAndSelectNewTab(final TabPane tabPane) {
-	    Tab tab = new Tab("Loading...");
+	    Tab tab = new Tab("0 %");
 	    final ObservableList<Tab> tabs = tabPane.getTabs();
 	    tab.closableProperty().bind(Bindings.size(tabs).greaterThan(2));
 	    tabs.add(tabs.size() - 1, tab);
@@ -250,6 +269,7 @@ public class Browser{
             @Override
             public void handle(ActionEvent actionEvent) {
             	Platform.exit();
+            	System.exit(0);
             }
         });
         

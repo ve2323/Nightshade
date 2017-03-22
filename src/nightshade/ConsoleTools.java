@@ -19,6 +19,90 @@ import javafx.scene.input.KeyEvent;
 
 public class ConsoleTools {
 	
+	class SystemSubtabs {
+		// native variables
+		TabPane subTabs = new TabPane();
+		
+		// cross class variables
+		private TabPane tabMaster;
+		private Tab system;
+		
+		public SystemSubtabs(TabPane tabmaster, Tab system){
+			this.tabMaster = tabmaster;
+			this.system = system;
+		}
+		
+		public void addTools(){
+			
+			subTabs.setId("system-subtabs");
+			
+			// add info tab
+			subTabs.getTabs().add(info());
+			
+			// set subset
+			system.setContent(subTabs);
+			system.setClosable(false);
+			tabMaster.getTabs().add(system);
+			
+		}
+		
+		private Tab info(){
+			
+			Tab info = new Tab();
+			info.setText("Information");
+			info.setClosable(false);
+			
+			TextArea infoArea = new TextArea();
+			infoArea.setId("info-area");
+			infoArea.setEditable(false);
+			infoArea.setWrapText(true);
+			
+			Thread memoryThread = new Thread(){
+				long memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+				long spike = memory,fall = memory;
+				
+				public void run(){
+					while(true){
+						memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+						if(fall > memory){fall = memory;}
+						if(spike < memory){spike = memory;}
+						infoArea.clear();
+						infoArea.appendText(
+							"☆ Memory usage: " + System.lineSeparator() +
+							"  • Bytes: " + String.valueOf(memory) + System.lineSeparator() +
+							"  • KB: " + String.valueOf(memory/1024) + System.lineSeparator() +
+							"  • MB: " + String.valueOf(((memory/1024.0)/1024.0)) + System.lineSeparator() +
+							"  • GB: " + String.valueOf((((memory/1024.0)/1024.0)/1024.0)) + System.lineSeparator() +
+							"   ■ Highest: " + System.lineSeparator() +
+							"     • Bytes: " + String.valueOf(spike) + System.lineSeparator() +
+							"     • KB: " + String.valueOf(spike/1024) + System.lineSeparator() +
+							"     • MB: " + String.valueOf(((spike/1024.0)/1024.0)) + System.lineSeparator() +
+							"     • GB: " + String.valueOf((((spike/1024.0)/1024.0)/1024.0)) + System.lineSeparator() +
+							"   ■ Lowest: " + System.lineSeparator() +
+							"     • Bytes: " + String.valueOf(fall) + System.lineSeparator() +
+							"     • KB: " + String.valueOf(fall/1024) + System.lineSeparator() +
+							"     • MB: " + String.valueOf(((fall/1024.0)/1024.0)) + System.lineSeparator() +
+							"     • GB: " + String.valueOf((((fall/1024.0)/1024.0)/1024.0)) + System.lineSeparator()
+							
+						);
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			};
+			memoryThread.start();
+			
+			info.setContent(infoArea);
+			return info;
+		}
+		
+		
+	}
+	
+	
 	class ConsoleSubtabs {
 		
 		// native variables
@@ -62,6 +146,7 @@ public class ConsoleTools {
 			output.setWrapText(true);
 			
 			SplitPane freestyleContainer = new SplitPane(command,output);
+			freestyleContainer.setId("freestyle-container");
 			freestyleContainer.setOrientation(Orientation.VERTICAL);
 			
 			// run actions in separate thread
