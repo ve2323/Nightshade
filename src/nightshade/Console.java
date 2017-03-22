@@ -9,6 +9,7 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.web.WebEngine;
 
 public class Console extends Thread{
 	
@@ -19,9 +20,11 @@ public class Console extends Thread{
 	
 	// cross class variables
 	private SplitPane browserContainer;
+	private WebEngine webEngine;
 	
-	public Console(SplitPane browserContainer){
+	public Console(SplitPane browserContainer, WebEngine webEngine){
 		this.browserContainer = browserContainer;
+		this.webEngine = webEngine;
 	}
 	
 	// open console on key combination
@@ -52,8 +55,13 @@ public class Console extends Thread{
 	    	Tab console = new Tab();
 	    	console.setText("Console");
 	    	
+	    	// system tabs
 	    	Tab system = new Tab();
 	    	system.setText("System");
+	    	
+	    	// web tabs
+	    	Tab web = new Tab();
+	    	web.setText("Web");
 	    	
 	    	// console content
 	    	ConsoleTools.ConsoleSubtabs consoleTools = new ConsoleTools().new ConsoleSubtabs(tabmaster, console);
@@ -62,6 +70,10 @@ public class Console extends Thread{
 	    	// system content
 	    	ConsoleTools.SystemSubtabs systemTools = new ConsoleTools().new SystemSubtabs(tabmaster, system);
 	    	systemTools.addTools();
+	    	
+	    	// web content
+	    	ConsoleTools.WebSubtabs webTools = new ConsoleTools().new WebSubtabs(tabmaster, web, webEngine);
+	    	webTools.addTools();
 	    	
 	    	// console settings
 	    	tabContainer.setCenter(tabmaster);
@@ -74,7 +86,8 @@ public class Console extends Thread{
 	    	consoleOpen = false;
 	    	browserContainer.getItems().remove(tabContainer);
 	    	
-	    	// remove tabs
+	    	// remove tabs one by one
+	    	tabmaster.getTabs().remove(0);
 	    	tabmaster.getTabs().remove(0);
 	    	tabmaster.getTabs().remove(0);
 	    }

@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.scene.control.SplitPane;
@@ -16,6 +17,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.web.WebEngine;
 
 public class ConsoleTools {
 	
@@ -193,7 +195,7 @@ public class ConsoleTools {
 											PrintStream printStream = new PrintStream(outputStream);
 											
 											// various data
-											output.appendText(System.lineSeparator() + "-- System data check --");
+											output.appendText(System.lineSeparator() + "-- System check --");
 											output.appendText(System.lineSeparator() + "stream I/O: " + printStream.toString());
 											output.appendText(System.lineSeparator() + "Thread: " + Thread.currentThread().getName());
 											output.appendText(System.lineSeparator() + "Action complete, attempting to interrupt thread...");
@@ -250,6 +252,132 @@ public class ConsoleTools {
 			return free;
 			
 		}
+		
+	}
+	
+	class WebSubtabs {
+		// native variables
+		private TabPane subTabs = new TabPane();
+		
+		// cross class variables
+		private TabPane tabMaster;
+		private Tab web;
+		private WebEngine webEngine;
+		
+		public WebSubtabs(TabPane tabmaster, Tab web, WebEngine webEngine){
+			this.tabMaster = tabmaster;
+			this.web = web;
+			this.webEngine = webEngine;
+		}
+		
+		public void addTools(){
+			
+			subTabs.setId("web-subtabs");
+			
+			// add info tab
+			subTabs.getTabs().add(freestyle());
+			
+			// set subset
+			web.setContent(subTabs);
+			web.setClosable(false);
+			tabMaster.getTabs().add(web);
+			
+		}
+		
+		private Tab freestyle(){
+			
+			Tab free = new Tab();
+			free.setText("Freestyle");
+			free.setClosable(false);
+			
+			TextArea command = new TextArea();
+			command.setId("freestyle-web-command");
+			command.setWrapText(true);
+			TextArea output = new TextArea();
+			output.setId("freestyle-web-output");
+			output.setWrapText(true);
+			
+			SplitPane freestyleContainer = new SplitPane(command,output);
+			freestyleContainer.setId("freestyle-web-container");
+			freestyleContainer.setOrientation(Orientation.VERTICAL);
+			
+			// run actions in separate thread
+			Platform.runLater(new Runnable(){
+				
+				String commandString,errorOutput;
+				
+				public void run(){
+					
+					// execute on enter click
+					EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
+			            public void handle(final KeyEvent keyEvent) {
+			                if (keyEvent.getCode() == KeyCode.ENTER) {
+			                	commandString = command.getText();
+			                	command.clear();
+			                	
+			                	Platform.runLater(new Runnable(){
+			                		
+			                		public void run(){
+										try {
+											output.clear();
+											
+											output.appendText("-- Executing javascript --" + System.lineSeparator());
+											output.appendText("Script: " + commandString + System.lineSeparator() + System.lineSeparator());
+											
+											webEngine.executeScript(commandString);
+											
+											// various data
+											output.appendText(System.lineSeparator() + "-- System check --");
+											output.appendText(System.lineSeparator() + "Thread: " + Thread.currentThread().getName());
+											output.appendText(System.lineSeparator() + "Action complete, attempting to interrupt thread...");
+											
+											Thread.currentThread().interrupt();
+											output.appendText(
+												System.lineSeparator() + 
+												"Checking if thread is interrupted.." + 
+												System.lineSeparator() +
+												"Interrupted: " +
+												Thread.currentThread().isInterrupted()
+											);
+											return;
+											
+										} catch (Exception e) {
+											output.clear();
+											// write stack trace to string and append to text area
+											StringWriter error = new StringWriter();
+											e.printStackTrace(new PrintWriter(error));
+											errorOutput = error.toString();
+											
+											output.appendText(errorOutput);
+											
+											output.appendText(System.lineSeparator() + "Action complete, attempting to interrupt thread...");
+											
+											Thread.currentThread().interrupt();
+											output.appendText(
+												System.lineSeparator() + 
+												"Checking if thread is interrupted.." + 
+												System.lineSeparator() +
+												"Interrupted: " +
+												Thread.currentThread().isInterrupted()
+											);
+											return;
+										}
+			                		}
+			                		
+			                	});
+			                	
+			                }
+			            }
+			        };
+			        command.setOnKeyPressed(executeCommand);
+					
+				}
+			});
+			
+			free.setContent(freestyleContainer);
+			return free;
+		}
+		
 		
 	}
 	

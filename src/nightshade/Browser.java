@@ -1,5 +1,8 @@
 package nightshade;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
@@ -34,6 +37,7 @@ public class Browser{
 	// native class variables
 	private boolean stageMaxed = true;
 	private double xOffset,yOffset;
+	String location;
 	Rectangle2D primaryScreenBounds;
 	
 	// cross class variables
@@ -68,7 +72,7 @@ public class Browser{
 		browserView.setCenter(browserContainer);
 		
 		// create console
-        Console console = new Console(browserContainer);
+        Console console = new Console(browserContainer, webEngine);
         console.addConsole();
 		
         // create fire bug
@@ -110,7 +114,6 @@ public class Browser{
 		// view load progress
 		webEngine.getLoadWorker().progressProperty().addListener((observable, oldValue, newValue) -> {
 		    if(newValue.doubleValue() > 0.0){
-		    	statusField.clear();
 		    	String progress = String.format("%.2f", newValue.doubleValue()).replace(",", "");
 		    	if(progress.indexOf("0")==0){
 		    		tab.setText( progress.substring(1) + " %");
@@ -125,9 +128,12 @@ public class Browser{
     		@SuppressWarnings("rawtypes")
     		@Override public void changed(ObservableValue ov, State oldState, State newState) {
               if (newState == Worker.State.SUCCEEDED) {
-            	tab.setText(webEngine.getTitle());
-                addressField.clear();
-                addressField.appendText(webEngine.getLocation());
+            		  tab.setText(webEngine.getTitle());
+                      addressField.clear();
+                      statusField.clear();
+                      location = webEngine.getLocation();
+                      addressField.appendText(location);
+                      statusField.appendText(getIp(location));
               }
             }
         });
@@ -341,6 +347,43 @@ public class Browser{
             }
         });
 		
+	}
+	
+	private String getIp(String radegast){
+		
+		String id1,id2,id3;
+		int index1,index2,index3;
+		boolean proceed = false;
+		String host = null;
+		String returnString = null;
+		InetAddress inetAddress;
+		
+		if(radegast.startsWith("https://")){radegast = radegast.substring(8); proceed = true;}
+		else if(radegast.startsWith("http://")){radegast = radegast.substring(7); proceed = true;}
+		
+		if(proceed){
+			index1 = radegast.indexOf(".");
+			id1 = radegast.substring(0, index1);
+			radegast = radegast.replace(id1+".", "");
+			index2 = radegast.indexOf(".");
+			id2 = radegast.substring(0, index2);
+			radegast = radegast.replace(id2+".", "");
+			index3 = radegast.indexOf("/");
+			id3 = radegast.substring(0, index3);
+			
+			host = id1+"."+id2+"."+id3;
+			
+			try {
+				inetAddress = InetAddress.getByName(host);
+				returnString = "IP: " + inetAddress.toString().split("/")[1];
+			} catch (UnknownHostException e) {
+				// do nothing
+			}
+			
+		}
+		
+		if(returnString == null){returnString = "IP: unavailable";}
+		return returnString;
 	}
 	
 	
