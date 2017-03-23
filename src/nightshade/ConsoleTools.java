@@ -277,10 +277,26 @@ public class ConsoleTools {
 			// add info tab
 			subTabs.getTabs().add(freestyle());
 			
+			// add statistics tab
+			subTabs.getTabs().add(statistics());
+			
 			// set subset
 			web.setContent(subTabs);
 			web.setClosable(false);
 			tabMaster.getTabs().add(web);
+			
+		}
+		
+		private Tab statistics(){
+			
+			Tab stat = new Tab();
+			stat.setText("Statistics");
+			stat.setClosable(false);
+			
+			
+			
+			
+			return stat;
 			
 		}
 		
@@ -300,6 +316,9 @@ public class ConsoleTools {
 			SplitPane freestyleContainer = new SplitPane(command,output);
 			freestyleContainer.setId("freestyle-web-container");
 			freestyleContainer.setOrientation(Orientation.VERTICAL);
+			
+			//TODO: check fx application thread exceptions
+			// encapsule with try/catch
 			
 			// run actions in separate thread
 			Platform.runLater(new Runnable(){
@@ -344,6 +363,7 @@ public class ConsoleTools {
 										} catch (Exception e) {
 											output.clear();
 											// write stack trace to string and append to text area
+											e.printStackTrace();
 											StringWriter error = new StringWriter();
 											e.printStackTrace(new PrintWriter(error));
 											errorOutput = error.toString();
