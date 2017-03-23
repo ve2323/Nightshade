@@ -15,7 +15,7 @@ public class Shade extends Application {
     	
         primarystage.setTitle("Nightshade");
         primarystage.getIcons().add(new Image("/assets/nightshade_stage.png"));
-        //primarystage.setMaximized(true);
+        primarystage.setMaximized(true);
         primarystage.initStyle(StageStyle.UNDECORATED);
         Scene scene = new Scene(new Group());
         scene.getStylesheets().add("/assets/shade.css");

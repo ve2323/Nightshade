@@ -7,7 +7,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
+import java.net.InetAddress;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
@@ -15,8 +15,10 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.web.WebEngine;
 
 public class ConsoleTools {
@@ -142,9 +144,22 @@ public class ConsoleTools {
 			
 			TextArea command = new TextArea();
 			command.setId("freestyle-command");
+			command.setPromptText(
+				"Enter a commandline argument to execute," + System.lineSeparator() +
+				"this is directly linked to java's exec function." + System.lineSeparator() + System.lineSeparator() +
+				"This command will origin at current directory which currently is: " + System.lineSeparator() +
+				System.getProperty("user.dir") + System.lineSeparator() + System.lineSeparator() +
+				"Exec() requires additional arguments to execute: " +
+				System.lineSeparator() + 
+				" • Windows origin: cmd /c <Insert command here>" + System.lineSeparator() +
+				" • Linux origin: /bin/sh <Insert command here>"
+			);
 			command.setWrapText(true);
 			TextArea output = new TextArea();
 			output.setId("freestyle-output");
+			output.setPromptText(
+				"This is where any and all output will be displayed."
+			);
 			output.setWrapText(true);
 			
 			SplitPane freestyleContainer = new SplitPane(command,output);
@@ -278,7 +293,7 @@ public class ConsoleTools {
 			subTabs.getTabs().add(freestyle());
 			
 			// add statistics tab
-			subTabs.getTabs().add(statistics());
+			subTabs.getTabs().add(lookup());
 			
 			// set subset
 			web.setContent(subTabs);
@@ -287,16 +302,80 @@ public class ConsoleTools {
 			
 		}
 		
-		private Tab statistics(){
+		// allow domain lookup
+		private Tab lookup(){
 			
-			Tab stat = new Tab();
-			stat.setText("Statistics");
-			stat.setClosable(false);
+			Tab lookup = new Tab();
+			lookup.setText("lookup");
+			lookup.setClosable(false);
 			
+			BorderPane lookupContainer = new BorderPane();
 			
+			TextField inputField = new TextField();
+			inputField.setPromptText("Enter a domain name.");
+			inputField.setId("lookup-input");
 			
+			TextArea ipOutput = new TextArea();
+			ipOutput.setPromptText(
+				"this area will show any and all output regarding input domain ip" + 
+				System.lineSeparator() + 
+				"This is directly linked to java's inetAddress."
+			);
+			ipOutput.setId("ip-output");
+			ipOutput.setWrapText(true);
+			ipOutput.setEditable(false);
 			
-			return stat;
+			SplitPane dividerOne = new SplitPane(ipOutput);
+			dividerOne.setOrientation(Orientation.VERTICAL);
+			
+			lookupContainer.setTop(inputField);
+			lookupContainer.setCenter(dividerOne);
+			
+			// run actions in separate thread
+			Thread lookupThread = new Thread(){
+				InetAddress[] allInetAddress;
+				String input = null;
+				String errorOutput = null;
+				
+				public void run(){
+					try{
+						EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
+				            public void handle(final KeyEvent keyEvent) {
+				                if (keyEvent.getCode() == KeyCode.ENTER) {
+				                	ipOutput.clear();
+									try {
+										input = inputField.getText();
+							            allInetAddress = InetAddress.getAllByName(input);
+							            
+							            ipOutput.appendText("Looking up ip for: " + input + System.lineSeparator());
+							            
+							            for(int i=0; i<allInetAddress.length; i++){
+							                ipOutput.appendText(" • " + allInetAddress[i].toString() + System.lineSeparator());
+							            }
+							        } catch (Exception e) {
+										// write stack trace to string and append to text area
+										StringWriter error = new StringWriter();
+										e.printStackTrace(new PrintWriter(error));
+										errorOutput = error.toString();
+										
+										ipOutput.appendText(errorOutput);
+							        }
+				                }
+				            }
+				        };
+				        inputField.setOnKeyPressed(executeCommand);
+					}
+					catch(Exception e){
+						Thread.currentThread().interrupt();
+						return;
+					}
+								
+				}
+			};
+			lookupThread.start();
+			
+			lookup.setContent(lookupContainer);
+			return lookup;
 			
 		}
 		
@@ -308,91 +387,100 @@ public class ConsoleTools {
 			
 			TextArea command = new TextArea();
 			command.setId("freestyle-web-command");
+			command.setPromptText(
+				"Enter javascript code to execute," + System.lineSeparator() +
+				"this is directly linked to java's executeScript function."
+			);
 			command.setWrapText(true);
 			TextArea output = new TextArea();
 			output.setId("freestyle-web-output");
+			output.setPromptText(
+				"Any and all output will be show here."
+			);
 			output.setWrapText(true);
 			
 			SplitPane freestyleContainer = new SplitPane(command,output);
 			freestyleContainer.setId("freestyle-web-container");
 			freestyleContainer.setOrientation(Orientation.VERTICAL);
 			
-			//TODO: check fx application thread exceptions
-			// encapsule with try/catch
-			
-			// run actions in separate thread
-			Platform.runLater(new Runnable(){
-				
-				String commandString,errorOutput;
-				
-				public void run(){
+			try{
+				// run actions in separate thread
+				Platform.runLater(new Runnable(){
 					
-					// execute on enter click
-					EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
-			            public void handle(final KeyEvent keyEvent) {
-			                if (keyEvent.getCode() == KeyCode.ENTER) {
-			                	commandString = command.getText();
-			                	command.clear();
-			                	
-			                	Platform.runLater(new Runnable(){
-			                		
-			                		public void run(){
-										try {
-											output.clear();
-											
-											output.appendText("-- Executing javascript --" + System.lineSeparator());
-											output.appendText("Script: " + commandString + System.lineSeparator() + System.lineSeparator());
-											
-											webEngine.executeScript(commandString);
-											
-											// various data
-											output.appendText(System.lineSeparator() + "-- System check --");
-											output.appendText(System.lineSeparator() + "Thread: " + Thread.currentThread().getName());
-											output.appendText(System.lineSeparator() + "Action complete, attempting to interrupt thread...");
-											
-											Thread.currentThread().interrupt();
-											output.appendText(
-												System.lineSeparator() + 
-												"Checking if thread is interrupted.." + 
-												System.lineSeparator() +
-												"Interrupted: " +
-												Thread.currentThread().isInterrupted()
-											);
-											return;
-											
-										} catch (Exception e) {
-											output.clear();
-											// write stack trace to string and append to text area
-											e.printStackTrace();
-											StringWriter error = new StringWriter();
-											e.printStackTrace(new PrintWriter(error));
-											errorOutput = error.toString();
-											
-											output.appendText(errorOutput);
-											
-											output.appendText(System.lineSeparator() + "Action complete, attempting to interrupt thread...");
-											
-											Thread.currentThread().interrupt();
-											output.appendText(
-												System.lineSeparator() + 
-												"Checking if thread is interrupted.." + 
-												System.lineSeparator() +
-												"Interrupted: " +
-												Thread.currentThread().isInterrupted()
-											);
-											return;
-										}
-			                		}
-			                		
-			                	});
-			                	
-			                }
-			            }
-			        };
-			        command.setOnKeyPressed(executeCommand);
+					String commandString,errorOutput;
 					
-				}
-			});
+					public void run(){
+						
+						// execute on enter click
+						EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
+				            public void handle(final KeyEvent keyEvent) {
+				                if (keyEvent.getCode() == KeyCode.ENTER) {
+				                	commandString = command.getText();
+				                	command.clear();
+				                	
+				                	Platform.runLater(new Runnable(){
+				                		
+				                		public void run(){
+											try {
+												output.clear();
+												
+												output.appendText("-- Executing javascript --" + System.lineSeparator());
+												output.appendText("Script: " + commandString + System.lineSeparator() + System.lineSeparator());
+												
+												webEngine.executeScript(commandString);
+												
+												// various data
+												output.appendText(System.lineSeparator() + "-- System check --");
+												output.appendText(System.lineSeparator() + "Thread: " + Thread.currentThread().getName());
+												output.appendText(System.lineSeparator() + "Action complete, attempting to interrupt thread...");
+												
+												Thread.currentThread().interrupt();
+												output.appendText(
+													System.lineSeparator() + 
+													"Checking if thread is interrupted.." + 
+													System.lineSeparator() +
+													"Interrupted: " +
+													Thread.currentThread().isInterrupted()
+												);
+												return;
+												
+											} catch (Exception e) {
+												output.clear();
+												// write stack trace to string and append to text area
+												e.printStackTrace();
+												StringWriter error = new StringWriter();
+												e.printStackTrace(new PrintWriter(error));
+												errorOutput = error.toString();
+												
+												output.appendText(errorOutput);
+												
+												output.appendText(System.lineSeparator() + "Action complete, attempting to interrupt thread...");
+												
+												Thread.currentThread().interrupt();
+												output.appendText(
+													System.lineSeparator() + 
+													"Checking if thread is interrupted.." + 
+													System.lineSeparator() +
+													"Interrupted: " +
+													Thread.currentThread().isInterrupted()
+												);
+												return;
+											}
+				                		}
+				                		
+				                	});
+				                	
+				                }
+				            }
+				        };
+				        command.setOnKeyPressed(executeCommand);
+						
+					}
+				});
+			}
+			catch(Exception e){
+				e.printStackTrace();
+			}
 			
 			free.setContent(freestyleContainer);
 			return free;
