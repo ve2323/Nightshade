@@ -8,6 +8,9 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
@@ -273,6 +276,7 @@ public class ConsoleTools {
 	class WebSubtabs {
 		// native variables
 		private TabPane subTabs = new TabPane();
+		boolean lookupNotRunning = true;
 		
 		// cross class variables
 		private TabPane tabMaster;
@@ -306,13 +310,13 @@ public class ConsoleTools {
 		private Tab lookup(){
 			
 			Tab lookup = new Tab();
-			lookup.setText("lookup");
+			lookup.setText("Lookup");
 			lookup.setClosable(false);
 			
 			BorderPane lookupContainer = new BorderPane();
 			
 			TextField inputField = new TextField();
-			inputField.setPromptText("Enter a domain name.");
+			inputField.setPromptText("Enter a domain name or ip.");
 			inputField.setId("lookup-input");
 			
 			TextArea ipOutput = new TextArea();
@@ -325,54 +329,193 @@ public class ConsoleTools {
 			ipOutput.setWrapText(true);
 			ipOutput.setEditable(false);
 			
-			SplitPane dividerOne = new SplitPane(ipOutput);
+			TextArea pingOutput = new TextArea();
+			pingOutput.setPromptText(
+				"this area will show any and all output from input ping" + 
+				System.lineSeparator()
+			);
+			pingOutput.setId("ping-output");
+			pingOutput.setWrapText(true);
+			pingOutput.setEditable(false);
+			
+			SplitPane dividerOne = new SplitPane(ipOutput,pingOutput);
 			dividerOne.setOrientation(Orientation.VERTICAL);
 			
 			lookupContainer.setTop(inputField);
 			lookupContainer.setCenter(dividerOne);
 			
-			// run actions in separate thread
-			Thread lookupThread = new Thread(){
-				InetAddress[] allInetAddress;
-				String input = null;
-				String errorOutput = null;
-				
-				public void run(){
-					try{
-						EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
-				            public void handle(final KeyEvent keyEvent) {
-				                if (keyEvent.getCode() == KeyCode.ENTER) {
-				                	ipOutput.clear();
-									try {
-										input = inputField.getText();
-							            allInetAddress = InetAddress.getAllByName(input);
-							            
-							            ipOutput.appendText("Looking up ip for: " + input + System.lineSeparator());
-							            
-							            for(int i=0; i<allInetAddress.length; i++){
-							                ipOutput.appendText(" • " + allInetAddress[i].toString() + System.lineSeparator());
-							            }
-							        } catch (Exception e) {
-										// write stack trace to string and append to text area
-										StringWriter error = new StringWriter();
-										e.printStackTrace(new PrintWriter(error));
-										errorOutput = error.toString();
-										
-										ipOutput.appendText(errorOutput);
-							        }
-				                }
-				            }
-				        };
-				        inputField.setOnKeyPressed(executeCommand);
-					}
-					catch(Exception e){
-						Thread.currentThread().interrupt();
-						return;
-					}
-								
-				}
-			};
-			lookupThread.start();
+			ExecutorService executor = Executors.newFixedThreadPool(1);
+			
+			EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
+	            public void handle(final KeyEvent keyEvent) {
+	                if (keyEvent.getCode() == KeyCode.ENTER && lookupNotRunning) {
+	                	lookupNotRunning = false;
+	                	Thread lookupThread = new Thread(){
+	                		
+	                		InetAddress[] allInetAddress;
+	            			String input = null;
+	            			String errorOutput = null;
+	                		
+	                		public void run(){
+	                			ipOutput.clear();
+	    						try {
+	    							input = inputField.getText().trim();
+	    				            
+	    				            ipOutput.appendText("Looking up ip for: " + input + System.lineSeparator());
+	    				            
+	    				            if(isHostname(input)){
+	    				            	allInetAddress = java.net.InetAddress.getAllByName(input);
+	    				            	for(int i=0; i<allInetAddress.length; i++){
+	    					                ipOutput.appendText(" • " + allInetAddress[i].toString() + System.lineSeparator());
+	    					            }
+	    				            } else{
+	    				            	ipOutput.appendText(java.net.InetAddress.getByName(input).toString() + System.lineSeparator());
+	    				            }
+	    				            
+	    			            	Thread.currentThread().interrupt();
+	    			            	ipOutput.appendText(
+	    								System.lineSeparator() + 
+	    								"Checking if thread is interrupted.." + 
+	    								System.lineSeparator() +
+	    								"Interrupted: " +
+	    								Thread.currentThread().isInterrupted()
+	    							);
+	    							return;
+	    				            
+	    				        } catch (Exception e) {
+	    							// write stack trace to string and append to text area
+	    							StringWriter error = new StringWriter();
+	    							e.printStackTrace(new PrintWriter(error));
+	    							errorOutput = error.toString();
+	    							
+	    							ipOutput.appendText(errorOutput);
+	    							Thread.currentThread().interrupt();
+	    							ipOutput.appendText(
+	    								System.lineSeparator() + 
+	    								"Checking if thread is interrupted.." + 
+	    								System.lineSeparator() +
+	    								"Interrupted: " +
+	    								Thread.currentThread().isInterrupted()
+	    							);
+	    							return;
+	    				        }
+	                		}
+	                	};
+	                	
+	                	Runnable pingThread = new Runnable() {
+	                		
+	                		InetAddress[] allInetAddress;
+	            			String input = null;
+	            			String line,currentIp;
+	            			BufferedReader stdInput;
+	            			ProcessBuilder pb;
+	                		
+	            			@Override
+	                		public void run(){
+	                			pingOutput.clear();
+								try{
+			            			input = inputField.getText().trim();
+			            			allInetAddress = java.net.InetAddress.getAllByName(input);
+			            			
+				            		if(isHostname(input)){
+				            			for(int i=0; i<allInetAddress.length; i++){
+				            				
+				            				currentIp = allInetAddress[i].toString().split("/")[1];
+				            				
+				            				pingOutput.appendText(
+					                    		System.lineSeparator() + System.lineSeparator() +
+					                    		"-- Ping " + currentIp + " --" +
+					                    		System.lineSeparator()
+				                    		);
+				                    		
+				            				pb = new ProcessBuilder("ping", currentIp);
+						                    stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));
+						                    
+						                    while (!stdInput.ready()){ /* wait until ready */ }
+				                    		
+											while ((line = stdInput.readLine()) != null){
+												if(line != null){
+													pingOutput.appendText(line + "\n");
+												}
+											}
+						                    
+				            			}
+				            			
+				            			stdInput.close();
+					                    
+					                    Thread.currentThread().interrupt();
+										pingOutput.appendText(
+											System.lineSeparator() + System.lineSeparator() +
+											"Checking if thread is interrupted.." + 
+											System.lineSeparator() +
+											"Interrupted: " +
+											Thread.currentThread().isInterrupted()
+										);
+										lookupNotRunning = true;
+										return;
+						            } else{
+						            	
+						            	pingOutput.appendText(
+				                    		System.lineSeparator() +
+				                    		"-- Ping " + input + " --" +
+				                    		System.lineSeparator()
+			                    		);
+						            	
+						            	pb = new ProcessBuilder("ping", input);
+					                    stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));        
+			
+					                    while (!stdInput.ready()){ /* wait until ready */ }
+			
+					                    while ((line = stdInput.readLine()) != null){
+					                    	if(line != null){
+					                    		pingOutput.appendText(line);
+					                    	}
+					                    }
+					                    
+					                    stdInput.close();
+					                    
+					                    Thread.currentThread().interrupt();
+										pingOutput.appendText(
+											System.lineSeparator() + System.lineSeparator() + 
+											"Checking if thread is interrupted.." + 
+											System.lineSeparator() +
+											"Interrupted: " +
+											Thread.currentThread().isInterrupted()
+										);
+										lookupNotRunning = true;
+										return;
+					                    
+						            }
+			                	} catch(Exception e){
+			                		// write stack trace to string and append to text area
+									StringWriter error = new StringWriter();
+									e.printStackTrace(new PrintWriter(error));
+									
+									pingOutput.appendText(error.toString());
+									
+									// make absolutely sure the stream closes with the thread on exception
+									try {stdInput.close();} catch (IOException ex) {/* do nothing */}
+									
+									Thread.currentThread().interrupt();
+									pingOutput.appendText(
+										System.lineSeparator() + System.lineSeparator() + 
+										"Checking if thread is interrupted.." + 
+										System.lineSeparator() +
+										"Interrupted: " +
+										Thread.currentThread().isInterrupted()
+									);
+									lookupNotRunning = true;
+									return;
+			                	}
+	                		}
+	                	};
+	                	
+	                	lookupThread.start();
+						executor.execute(pingThread);
+	                }
+	            }
+	        };
+	        inputField.setOnKeyPressed(executeCommand);
 			
 			lookup.setContent(lookupContainer);
 			return lookup;
@@ -485,6 +628,25 @@ public class ConsoleTools {
 			free.setContent(freestyleContainer);
 			return free;
 		}
+		
+		private boolean isHostname(String s) {
+
+		    char[] ca = s.toCharArray();
+		    // if we see a character that is neither a digit nor a period
+		    // then s is probably a hostname
+		    for (int i = 0; i < ca.length; i++) {
+		      if (!Character.isDigit(ca[i])) {
+		        if (ca[i] != '.') {
+		          return true;
+		        }
+		      }
+		    }
+
+		    // Everything was either a digit or a period
+		    // so s looks like an IP address in dotted quad format
+		    return false;
+
+		  } // end isHostName
 		
 		
 	}
