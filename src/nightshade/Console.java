@@ -14,7 +14,7 @@ import javafx.scene.web.WebEngine;
 public class Console{
 	
 	// class native variables
-	private boolean consoleOpen = false;
+	Commons commons = new Commons();
 	private TabPane tabmaster = new TabPane();
 	private BorderPane tabContainer = new BorderPane();
 	
@@ -50,8 +50,8 @@ public class Console{
 	public void console(){
 		
 		// check if console is open
-	    if(!consoleOpen){
-	    	consoleOpen = true;
+	    if(!commons.consoleOpen){
+	    	commons.consoleOpen = true;
 	    	
 	    	// console tabs
 	    	Tab console = new Tab();
@@ -70,7 +70,7 @@ public class Console{
 	    	consoleTools.addTools();
 	    	
 	    	// system content
-	    	ConsoleTools.SystemSubtabs systemTools = new ConsoleTools().new SystemSubtabs(tabmaster, system);
+	    	ConsoleTools.SystemSubtabs systemTools = new ConsoleTools().new SystemSubtabs(tabmaster, system, commons);
 	    	systemTools.addTools();
 	    	
 	    	// web content
@@ -86,7 +86,7 @@ public class Console{
 	    } 
 	    // close console
 	    else{
-	    	consoleOpen = false;
+	    	commons.consoleOpen = false;
 	    	browserContainer.getItems().remove(tabContainer);
 	    	
 	    	// remove tabs one by one

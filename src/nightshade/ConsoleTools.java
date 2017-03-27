@@ -28,15 +28,17 @@ public class ConsoleTools {
 	
 	class SystemSubtabs {
 		// native variables
+		Commons commons;
 		TabPane subTabs = new TabPane();
 		
 		// cross class variables
 		private TabPane tabMaster;
 		private Tab system;
 		
-		public SystemSubtabs(TabPane tabmaster, Tab system){
+		public SystemSubtabs(TabPane tabmaster, Tab system, Commons commons){
 			this.tabMaster = tabmaster;
 			this.system = system;
+			this.commons = commons;
 		}
 		
 		public void addTools(){
@@ -71,7 +73,7 @@ public class ConsoleTools {
 				public void run(){
 					// TODO: run for as long as console is open
 					// currently keeps running after termination
-					while(Thread.currentThread().isAlive()){
+					while(commons.consoleOpen){
 						try {
 							memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 							if(fall > memory){fall = memory;}
@@ -96,7 +98,6 @@ public class ConsoleTools {
 								
 							);
 							Thread.sleep(1000);
-							System.out.println("running.. " + Thread.currentThread().getName());
 						} catch (InterruptedException e) {
 							StringWriter error = new StringWriter();
 							e.printStackTrace(new PrintWriter(error));
