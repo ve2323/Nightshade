@@ -8,6 +8,9 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -47,6 +50,7 @@ public class ConsoleTools {
 			
 			// add info tab
 			subTabs.getTabs().add(info());
+			subTabs.getTabs().add(ip());
 			
 			// set subset
 			system.setContent(subTabs);
@@ -71,8 +75,6 @@ public class ConsoleTools {
 				long spike = memory,fall = memory;
 				
 				public void run(){
-					// TODO: run for as long as console is open
-					// currently keeps running after termination
 					while(commons.consoleOpen){
 						try {
 							memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
@@ -134,6 +136,111 @@ public class ConsoleTools {
 			
 			info.setContent(infoArea);
 			return info;
+		}
+		
+		private Tab ip(){
+					
+			Tab ip = new Tab();
+			ip.setText("Ip");
+			ip.setClosable(false);
+			
+			TextArea ipArea = new TextArea();
+			ipArea.setId("ip-area");
+			ipArea.setEditable(false);
+			ipArea.setWrapText(true);
+			
+			ExecutorService executor = Executors.newFixedThreadPool(1);
+			
+			// get ip address (public and ipconfig / ifconfig depending on OS)
+			Runnable ipThread = new Runnable() {
+        		
+				BufferedReader stdInput;
+    			Process pb;
+    			String line;
+				
+    			@Override
+        		public void run(){
+    				try{
+    					
+    					ipArea.appendText(
+							"-- Public ip --" + 
+	    					System.lineSeparator() + 
+	    					System.lineSeparator() +
+							"IP: " + getPublicIpAddress() + 
+							System.lineSeparator() + System.lineSeparator() +
+							"-- System > IP --" + 
+							System.lineSeparator()
+						);
+    					
+    					if(System.getProperty("os.name").toLowerCase().contains("win")){
+    						pb = Runtime.getRuntime().exec("ipconfig /all");
+    					} else if(System.getProperty("os.name").toLowerCase().contains("nux")){
+    						pb = Runtime.getRuntime().exec("ifconfig -a");
+    					}
+    					
+    					if(pb != null){
+    						pb.waitFor();
+    						
+    						stdInput = new BufferedReader(new InputStreamReader(pb.getInputStream()));
+    	                    
+    	                    while (!stdInput.ready()){ /* wait until ready */ }
+    	            		
+    						while ((line = stdInput.readLine()) != null){
+    							if(line != null){
+    								ipArea.appendText(line + "\n");
+    							}
+    						}
+    					}
+						
+						Thread.currentThread().interrupt();
+		            	ipArea.appendText(
+							System.lineSeparator() + 
+							"Checking if thread is interrupted.." + 
+							System.lineSeparator() +
+							"Interrupted: " +
+							Thread.currentThread().isInterrupted()
+						);
+		            	stdInput.close();
+						return;
+						
+    				} catch(Exception e){
+    					StringWriter error = new StringWriter();
+						e.printStackTrace(new PrintWriter(error));
+						
+						ipArea.appendText(System.lineSeparator() + System.lineSeparator() + error.toString());
+						
+						Thread.currentThread().interrupt();
+		            	ipArea.appendText(
+							System.lineSeparator() + 
+							"Checking if thread is interrupted.." + 
+							System.lineSeparator() +
+							"Interrupted: " +
+							Thread.currentThread().isInterrupted()
+						);
+		            	if(stdInput != null){try {stdInput.close();} catch (IOException e1) {e1.printStackTrace();}}
+						return;
+    				}
+    			}
+    			
+			};
+			
+			executor.execute(ipThread);
+			
+			ip.setContent(ipArea);
+			return ip;
+			
+		} // fetch public ip address
+		public String getPublicIpAddress() throws MalformedURLException,IOException {
+
+		    URL connection = new URL("http://checkip.amazonaws.com/");
+		    URLConnection con = connection.openConnection();
+		    String str = null;
+		    BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+		    str = reader.readLine();
+		    
+		    reader.close();
+
+		    return str;
 		}
 		
 		

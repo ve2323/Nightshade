@@ -231,6 +231,18 @@
 				}
 			
 			/* info end */
+			
+			/* ip */
+				
+				#ip-area{
+					-fx-prompt-text-fill: #00ff00;
+					-fx-control-inner-background:#000000;
+					-fx-highlight-fill: #00ff00;
+					-fx-highlight-text-fill: #000000;
+					-fx-text-fill: #00ff00;
+				}
+				
+			/* ip end */
 		
 		/* system subtabs end */
 	
