@@ -114,6 +114,7 @@ public class ConsoleTools {
 		
 		// native variables
 		TabPane subTabs = new TabPane();
+		boolean freestyleRunning = false;
 		
 		// cross class variables
 		private TabPane tabMaster;
@@ -180,7 +181,8 @@ public class ConsoleTools {
 					// execute on enter click
 					EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
 			            public void handle(final KeyEvent keyEvent) {
-			                if (keyEvent.getCode() == KeyCode.ENTER) {
+			                if (keyEvent.getCode() == KeyCode.ENTER && !freestyleRunning) {
+			                	freestyleRunning = true;
 			                	commandString = command.getText();
 			                	command.clear();
 			                	
@@ -229,6 +231,7 @@ public class ConsoleTools {
 												"Interrupted: " +
 												Thread.currentThread().isInterrupted()
 											);
+											freestyleRunning = false;
 											return;
 											
 										} catch (IOException | InterruptedException e) {
@@ -250,6 +253,7 @@ public class ConsoleTools {
 												"Interrupted: " +
 												Thread.currentThread().isInterrupted()
 											);
+											freestyleRunning = false;
 											return;
 										}
 			                		}
@@ -366,7 +370,7 @@ public class ConsoleTools {
 	    				            if(isHostname(input)){
 	    				            	allInetAddress = java.net.InetAddress.getAllByName(input);
 	    				            	for(int i=0; i<allInetAddress.length; i++){
-	    					                ipOutput.appendText(" • " + allInetAddress[i].toString() + System.lineSeparator());
+	    					                ipOutput.appendText(" • " + allInetAddress[i].toString().split("/")[1] + System.lineSeparator());
 	    					            }
 	    				            } else{
 	    				            	ipOutput.appendText(java.net.InetAddress.getByName(input).toString() + System.lineSeparator());
@@ -415,9 +419,9 @@ public class ConsoleTools {
 	                			pingOutput.clear();
 								try{
 			            			input = inputField.getText().trim();
-			            			allInetAddress = java.net.InetAddress.getAllByName(input);
 			            			
 				            		if(isHostname(input)){
+				            			allInetAddress = java.net.InetAddress.getAllByName(input);
 				            			for(int i=0; i<allInetAddress.length; i++){
 				            				
 				            				currentIp = allInetAddress[i].toString().split("/")[1];
@@ -440,8 +444,6 @@ public class ConsoleTools {
 											}
 						                    
 				            			}
-				            			
-				            			stdInput.close();
 					                    
 					                    Thread.currentThread().interrupt();
 										pingOutput.appendText(
@@ -452,6 +454,7 @@ public class ConsoleTools {
 											Thread.currentThread().isInterrupted()
 										);
 										lookupNotRunning = true;
+										stdInput.close();
 										return;
 						            } else{
 						            	
@@ -472,8 +475,6 @@ public class ConsoleTools {
 					                    	}
 					                    }
 					                    
-					                    stdInput.close();
-					                    
 					                    Thread.currentThread().interrupt();
 										pingOutput.appendText(
 											System.lineSeparator() + System.lineSeparator() + 
@@ -483,9 +484,11 @@ public class ConsoleTools {
 											Thread.currentThread().isInterrupted()
 										);
 										lookupNotRunning = true;
+										stdInput.close();
 										return;
 					                    
 						            }
+				            		
 			                	} catch(Exception e){
 			                		// write stack trace to string and append to text area
 									StringWriter error = new StringWriter();
@@ -494,7 +497,9 @@ public class ConsoleTools {
 									pingOutput.appendText(error.toString());
 									
 									// make absolutely sure the stream closes with the thread on exception
-									try {stdInput.close();} catch (IOException ex) {/* do nothing */}
+									if(stdInput != null){
+										try {stdInput.close();} catch (IOException ex) {/* do nothing */}
+									}
 									
 									Thread.currentThread().interrupt();
 									pingOutput.appendText(

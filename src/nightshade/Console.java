@@ -22,6 +22,7 @@ public class Console extends Thread{
 	private SplitPane browserContainer;
 	private WebEngine webEngine;
 	
+	// constructor
 	public Console(SplitPane browserContainer, WebEngine webEngine){
 		this.browserContainer = browserContainer;
 		this.webEngine = webEngine;
@@ -30,9 +31,10 @@ public class Console extends Thread{
 	// open console on key combination
 	public void addConsole(){
 		
+		// id
 		tabmaster.setId("console-tabs");
 		
-		// ctrl+d
+		// open/close console  with ctrl+D
 		KeyCombination consoleCombo = new KeyCodeCombination(KeyCode.D, KeyCombination.CONTROL_DOWN);
 		browserContainer.setOnKeyPressed(new EventHandler<KeyEvent>(){
 	        @Override
@@ -78,6 +80,7 @@ public class Console extends Thread{
 	    	// console settings
 	    	tabContainer.setCenter(tabmaster);
 	    	
+	    	// add tabcontainer to browserContainer
 	    	browserContainer.getItems().add(tabContainer);
 	    	
 	    } 
