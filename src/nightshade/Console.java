@@ -11,7 +11,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.web.WebEngine;
 
-public class Console extends Thread{
+public class Console{
 	
 	// class native variables
 	private boolean consoleOpen = false;

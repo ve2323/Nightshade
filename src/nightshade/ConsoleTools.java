@@ -69,35 +69,64 @@ public class ConsoleTools {
 				long spike = memory,fall = memory;
 				
 				public void run(){
-					while(true){
-						memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-						if(fall > memory){fall = memory;}
-						if(spike < memory){spike = memory;}
-						infoArea.clear();
-						infoArea.appendText(
-							"☆ Memory usage: " + System.lineSeparator() +
-							"  • Bytes: " + String.valueOf(memory) + System.lineSeparator() +
-							"  • KB: " + String.valueOf(memory/1024) + System.lineSeparator() +
-							"  • MB: " + String.valueOf(((memory/1024.0)/1024.0)) + System.lineSeparator() +
-							"  • GB: " + String.valueOf((((memory/1024.0)/1024.0)/1024.0)) + System.lineSeparator() +
-							"   ■ Highest: " + System.lineSeparator() +
-							"     • Bytes: " + String.valueOf(spike) + System.lineSeparator() +
-							"     • KB: " + String.valueOf(spike/1024) + System.lineSeparator() +
-							"     • MB: " + String.valueOf(((spike/1024.0)/1024.0)) + System.lineSeparator() +
-							"     • GB: " + String.valueOf((((spike/1024.0)/1024.0)/1024.0)) + System.lineSeparator() +
-							"   ■ Lowest: " + System.lineSeparator() +
-							"     • Bytes: " + String.valueOf(fall) + System.lineSeparator() +
-							"     • KB: " + String.valueOf(fall/1024) + System.lineSeparator() +
-							"     • MB: " + String.valueOf(((fall/1024.0)/1024.0)) + System.lineSeparator() +
-							"     • GB: " + String.valueOf((((fall/1024.0)/1024.0)/1024.0)) + System.lineSeparator()
-							
-						);
+					// TODO: run for as long as console is open
+					// currently keeps running after termination
+					while(Thread.currentThread().isAlive()){
 						try {
+							memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+							if(fall > memory){fall = memory;}
+							if(spike < memory){spike = memory;}
+							infoArea.clear();
+							infoArea.appendText(
+								"☆ Memory usage: " + System.lineSeparator() +
+								"  • Bytes: " + String.valueOf(memory) + System.lineSeparator() +
+								"  • KB: " + String.valueOf(memory/1024) + System.lineSeparator() +
+								"  • MB: " + String.valueOf(((memory/1024.0)/1024.0)) + System.lineSeparator() +
+								"  • GB: " + String.valueOf((((memory/1024.0)/1024.0)/1024.0)) + System.lineSeparator() +
+								"   ■ Highest: " + System.lineSeparator() +
+								"     • Bytes: " + String.valueOf(spike) + System.lineSeparator() +
+								"     • KB: " + String.valueOf(spike/1024) + System.lineSeparator() +
+								"     • MB: " + String.valueOf(((spike/1024.0)/1024.0)) + System.lineSeparator() +
+								"     • GB: " + String.valueOf((((spike/1024.0)/1024.0)/1024.0)) + System.lineSeparator() +
+								"   ■ Lowest: " + System.lineSeparator() +
+								"     • Bytes: " + String.valueOf(fall) + System.lineSeparator() +
+								"     • KB: " + String.valueOf(fall/1024) + System.lineSeparator() +
+								"     • MB: " + String.valueOf(((fall/1024.0)/1024.0)) + System.lineSeparator() +
+								"     • GB: " + String.valueOf((((fall/1024.0)/1024.0)/1024.0)) + System.lineSeparator()
+								
+							);
 							Thread.sleep(1000);
+							System.out.println("running.. " + Thread.currentThread().getName());
 						} catch (InterruptedException e) {
-							e.printStackTrace();
+							StringWriter error = new StringWriter();
+							e.printStackTrace(new PrintWriter(error));
+							
+							infoArea.appendText(
+								System.lineSeparator() +
+								"-- Error occured --" + System.lineSeparator() +
+								error.toString() + 
+								"Breaking function..."
+							);
+							break;
 						}
 					}
+					
+					infoArea.appendText(
+						System.lineSeparator() +
+						"-- Function terminated --" + 
+						System.lineSeparator() +
+						"Attempting to interrupt thread.."
+					);
+					
+					Thread.currentThread().interrupt();
+					infoArea.appendText(
+						System.lineSeparator() + 
+						"Checking if thread is interrupted: " + 
+						System.lineSeparator() +
+						"Interrupted: " +
+						Thread.currentThread().isInterrupted()
+					);
+					
 				}
 			};
 			memoryThread.start();
