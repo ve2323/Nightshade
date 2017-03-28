@@ -148,6 +148,12 @@ public class ConsoleTools {
 			ipArea.setId("ip-area");
 			ipArea.setEditable(false);
 			ipArea.setWrapText(true);
+			ipArea.setPromptText(
+				"Press enter to show ip data," +
+				System.lineSeparator() +
+				"this will run first display your external ip then run 'ipconfig /all' or 'ifconfig -a' depending on OS."
+			);
+			
 			
 			ExecutorService executor = Executors.newFixedThreadPool(1);
 			
@@ -155,71 +161,77 @@ public class ConsoleTools {
 			Runnable ipThread = new Runnable() {
         		
 				BufferedReader stdInput;
-    			Process pb;
+    			ProcessBuilder pb;
     			String line;
+    			boolean ipRunning = false;
 				
     			@Override
         		public void run(){
-    				try{
-    					
-    					ipArea.appendText(
-							"-- Public ip --" + 
-	    					System.lineSeparator() + 
-	    					System.lineSeparator() +
-							"IP: " + getPublicIpAddress() + 
-							System.lineSeparator() + System.lineSeparator() +
-							"-- System > IP --" + 
-							System.lineSeparator()
-						);
-    					
-    					if(System.getProperty("os.name").toLowerCase().contains("win")){
-    						pb = Runtime.getRuntime().exec("ipconfig /all");
-    					} else if(System.getProperty("os.name").toLowerCase().contains("nux")){
-    						pb = Runtime.getRuntime().exec("ifconfig -a");
-    					}
-    					
-    					if(pb != null){
-    						pb.waitFor();
-    						
-    						stdInput = new BufferedReader(new InputStreamReader(pb.getInputStream()));
-    	                    
-    	                    while (!stdInput.ready()){ /* wait until ready */ }
-    	            		
-    						while ((line = stdInput.readLine()) != null){
-    							if(line != null){
-    								ipArea.appendText(line + "\n");
-    							}
-    						}
-    					}
-						
-						Thread.currentThread().interrupt();
-		            	ipArea.appendText(
-							System.lineSeparator() + 
-							"Checking if thread is interrupted.." + 
-							System.lineSeparator() +
-							"Interrupted: " +
-							Thread.currentThread().isInterrupted()
-						);
-		            	stdInput.close();
-						return;
-						
-    				} catch(Exception e){
-    					StringWriter error = new StringWriter();
-						e.printStackTrace(new PrintWriter(error));
-						
-						ipArea.appendText(System.lineSeparator() + System.lineSeparator() + error.toString());
-						
-						Thread.currentThread().interrupt();
-		            	ipArea.appendText(
-							System.lineSeparator() + 
-							"Checking if thread is interrupted.." + 
-							System.lineSeparator() +
-							"Interrupted: " +
-							Thread.currentThread().isInterrupted()
-						);
-		            	if(stdInput != null){try {stdInput.close();} catch (IOException e1) {e1.printStackTrace();}}
-						return;
-    				}
+    				EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
+			            public void handle(final KeyEvent keyEvent) {
+			                if (keyEvent.getCode() == KeyCode.ENTER && !ipRunning) {
+			                	ipRunning = true;
+			    				try{
+			    					ipArea.appendText(
+										"-- Public ip --" + 
+				    					System.lineSeparator() + 
+				    					System.lineSeparator() +
+										"IP: " + getPublicIpAddress() + 
+										System.lineSeparator() + System.lineSeparator() +
+										"-- System > IP --" + 
+										System.lineSeparator()
+									);
+			    					
+			    					if(System.getProperty("os.name").toLowerCase().contains("win")){
+			    						pb = new ProcessBuilder("ipconfig","/all");
+			    					} else if(System.getProperty("os.name").toLowerCase().contains("nux")){
+			    						pb = new ProcessBuilder("ifconfig -a");
+			    					}
+									
+									stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));
+				                    
+				                    while (!stdInput.ready()){ /* wait until ready */ }
+				            		
+									while ((line = stdInput.readLine()) != null){
+										if(line != null){
+											ipArea.appendText(line + "\n");
+										}
+									}
+			    					
+									Thread.currentThread().interrupt();
+					            	ipArea.appendText(
+										System.lineSeparator() + 
+										"Checking if thread is interrupted.." + 
+										System.lineSeparator() +
+										"Interrupted: " +
+										Thread.currentThread().isInterrupted()
+									);
+					            	stdInput.close();
+					            	ipRunning = false;
+									return;
+									
+			    				} catch(Exception e){
+			    					StringWriter error = new StringWriter();
+									e.printStackTrace(new PrintWriter(error));
+									
+									ipArea.appendText(System.lineSeparator() + System.lineSeparator() + error.toString());
+									
+									Thread.currentThread().interrupt();
+					            	ipArea.appendText(
+										System.lineSeparator() + 
+										"Checking if thread is interrupted.." + 
+										System.lineSeparator() +
+										"Interrupted: " +
+										Thread.currentThread().isInterrupted()
+									);
+					            	if(stdInput != null){try {stdInput.close();} catch (IOException e1) {e1.printStackTrace();}}
+					            	ipRunning = false;
+									return;
+			    				}
+			                }
+			            }
+    				};
+    				ipArea.setOnKeyPressed(executeCommand);
     			}
     			
 			};
