@@ -14,21 +14,20 @@ import java.net.URLConnection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
-import javafx.scene.control.RadioButton;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 
 public class ConsoleTools {
@@ -434,6 +433,7 @@ public class ConsoleTools {
 		// native variables
 		private TabPane subTabs = new TabPane();
 		boolean lookupNotRunning = true;
+		boolean scrapegoatNotRunning = true;
 		
 		// cross class variables
 		private TabPane tabMaster;
@@ -798,37 +798,110 @@ public class ConsoleTools {
 			jsoup.setText("scrapegoat");
 			jsoup.setClosable(false);
 			
-			// place all input graphical objects
-			VBox inputContainer = new VBox();
-			
-			// output
-			TextArea output = new TextArea();
+			BorderPane container = new BorderPane();
 			
 			// grab from url
 			TextField specifiedUrl = new TextField();
+			specifiedUrl.setId("scrapegoat-url-input");
+			specifiedUrl.setPromptText("Enter url to fetch data from.");
+			
+			// output
+			TextArea output = new TextArea();
+			output.setId("scrapegoat-output");
+			output.setPromptText(
+				"This is where any and all output will be displayed." + System.lineSeparator() +
+				"Scrapegoat makes use of Jsoup to parse html."
+			);
+			output.setWrapText(true);
 			
 			// element to obtain
-			TextField specifiedItem = new TextField();
+			//TextField specifiedItem = new TextField();
+			//specifiedItem.setPromptText("Selector, Directly linked to Jsoup select functionality.");
 			
-			// first tab group
-			HBox groupOne = new HBox();
-			ToggleGroup itemGroup = new ToggleGroup();
-			RadioButton idItem = new RadioButton("Id");
-			idItem.setToggleGroup(itemGroup);
+			container.setTop(specifiedUrl);
+			container.setCenter(output);
 			
-			RadioButton classItem = new RadioButton("Class");
-			classItem.setToggleGroup(itemGroup);
+			ExecutorService executor = Executors.newFixedThreadPool(1);
 			
-			RadioButton tagItem = new RadioButton("Tag");
-			tagItem.setToggleGroup(itemGroup);
-			
-			groupOne.getChildren().addAll(idItem,classItem,tagItem);
-			
-			inputContainer.getChildren().addAll(specifiedUrl,specifiedItem,groupOne);
-			
-			// add all objects
-			SplitPane container = new SplitPane(inputContainer,output);
-			container.setOrientation(Orientation.VERTICAL);
+			Runnable jsoupThread = new Runnable() {
+				String url,item;
+				
+				@Override
+				public void run(){
+					// execute on enter click
+					EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
+			            public void handle(final KeyEvent keyEvent) {
+			                if (keyEvent.getCode() == KeyCode.ENTER && scrapegoatNotRunning) {
+			                	output.clear();
+			                	scrapegoatNotRunning = false;
+			                    url = specifiedUrl.getText().trim();
+	     					    //item = specifiedItem.getText().trim();
+			                	
+			                	try{
+			                		
+			                		if(url != null && !url.equals("")){
+			                			if(item != null && !item.equals("")){
+			                				
+			                			} else{
+			                				Document doc = Jsoup.connect(url).get();
+			                				output.appendText(doc.toString());
+			                				
+			                				Thread.currentThread().interrupt();
+											output.appendText(
+												System.lineSeparator() + System.lineSeparator() +
+												"Checking if thread is interrupted.." + 
+												System.lineSeparator() +
+												"Interrupted: " +
+												Thread.currentThread().isInterrupted()
+											);
+											scrapegoatNotRunning = true;
+											return;
+			                			}
+			                		} else{
+			                			output.appendText("No url found");
+			                			
+			                			Thread.currentThread().interrupt();
+										output.appendText(
+											System.lineSeparator() + System.lineSeparator() +
+											"Checking if thread is interrupted.." + 
+											System.lineSeparator() +
+											"Interrupted: " +
+											Thread.currentThread().isInterrupted()
+										);
+										scrapegoatNotRunning = true;
+										return;
+			                		}
+			                		
+			                	}catch(Exception e){
+			                		output.clear();
+									// write stack trace to string and append to text area
+									e.printStackTrace();
+									StringWriter error = new StringWriter();
+									e.printStackTrace(new PrintWriter(error));
+									output.appendText(error.toString());
+			                		
+			                		Thread.currentThread().interrupt();
+									output.appendText(
+										System.lineSeparator() + 
+										"Checking if thread is interrupted.." + 
+										System.lineSeparator() +
+										"Interrupted: " +
+										Thread.currentThread().isInterrupted()
+									);
+									scrapegoatNotRunning = true;
+									return;
+			                		
+			                	}
+			                	
+			                }
+			            }
+					};
+					specifiedUrl.setOnKeyPressed(executeCommand);
+					//specifiedItem.setOnKeyPressed(executeCommand);
+					
+				}
+			};
+			executor.execute(jsoupThread);
 			
 			jsoup.setContent(container);
 			return jsoup;
