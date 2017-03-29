@@ -17,14 +17,18 @@ import java.util.concurrent.Executors;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 
 public class ConsoleTools {
@@ -452,6 +456,9 @@ public class ConsoleTools {
 			// add statistics tab
 			subTabs.getTabs().add(lookup());
 			
+			// add scrapegoat
+			subTabs.getTabs().add(scrapeGoat());
+			
 			// set subset
 			web.setContent(subTabs);
 			web.setClosable(false);
@@ -782,6 +789,52 @@ public class ConsoleTools {
 			free.setContent(freestyleContainer);
 			return free;
 		}
+		
+		// TODO:
+		// jsoup tool
+		private Tab scrapeGoat(){
+			
+			Tab jsoup = new Tab();
+			jsoup.setText("scrapegoat");
+			jsoup.setClosable(false);
+			
+			// place all input graphical objects
+			VBox inputContainer = new VBox();
+			
+			// output
+			TextArea output = new TextArea();
+			
+			// grab from url
+			TextField specifiedUrl = new TextField();
+			
+			// element to obtain
+			TextField specifiedItem = new TextField();
+			
+			// first tab group
+			HBox groupOne = new HBox();
+			ToggleGroup itemGroup = new ToggleGroup();
+			RadioButton idItem = new RadioButton("Id");
+			idItem.setToggleGroup(itemGroup);
+			
+			RadioButton classItem = new RadioButton("Class");
+			classItem.setToggleGroup(itemGroup);
+			
+			RadioButton tagItem = new RadioButton("Tag");
+			tagItem.setToggleGroup(itemGroup);
+			
+			groupOne.getChildren().addAll(idItem,classItem,tagItem);
+			
+			inputContainer.getChildren().addAll(specifiedUrl,specifiedItem,groupOne);
+			
+			// add all objects
+			SplitPane container = new SplitPane(inputContainer,output);
+			container.setOrientation(Orientation.VERTICAL);
+			
+			jsoup.setContent(container);
+			return jsoup;
+			
+		}
+
 		
 		private boolean isHostname(String s) {
 
