@@ -30,9 +30,9 @@
 		}
 		
 		#address-field:hover{
-			-fx-border-insets: 3px;
-		    -fx-background-insets: 3px;
-		    -fx-background-radius: 2;
+			-fx-border-insets: 4px;
+		    -fx-background-insets: 4px;
+		    -fx-background-radius: 5;
 		    -fx-effect: dropshadow( three-pass-box ,  #995ef2, 0,0,2,2 );
 		}
 	
@@ -230,6 +230,14 @@
 					-fx-text-fill: #00ff00;
 				}
 			
+				#system-area{
+					-fx-prompt-text-fill: #00ff00;
+					-fx-control-inner-background:#000000;
+					-fx-highlight-fill: #00ff00;
+					-fx-highlight-text-fill: #000000;
+					-fx-text-fill: #00ff00;
+				}
+			
 			/* info end */
 			
 			/* ip */
@@ -326,7 +334,15 @@
 				/* lookup end */
 				
 				/* scrapegoat */
-				
+					
+					#scrapegoat-selector-input{
+						-fx-prompt-text-fill: #00ff00;
+						-fx-control-inner-background:#000000;
+						-fx-highlight-fill: #00ff00;
+						-fx-highlight-text-fill: #000000;
+						-fx-text-fill: #00ff00;
+					}
+					
 					#scrapegoat-url-input{
 						-fx-prompt-text-fill: #00ff00;
 						-fx-control-inner-background:#000000;

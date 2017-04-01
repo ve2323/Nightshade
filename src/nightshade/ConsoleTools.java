@@ -11,11 +11,13 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
 import javafx.application.Platform;
 import javafx.event.EventHandler;
@@ -36,6 +38,7 @@ public class ConsoleTools {
 		// native variables
 		Commons commons;
 		TabPane subTabs = new TabPane();
+		boolean ipRunning = false;
 		
 		// cross class variables
 		private TabPane tabMaster;
@@ -68,11 +71,55 @@ public class ConsoleTools {
 			info.setText("Information");
 			info.setClosable(false);
 			
-			TextArea infoArea = new TextArea();
-			infoArea.setId("info-area");
-			infoArea.setEditable(false);
-			infoArea.setWrapText(true);
+			TextArea systemArea = new TextArea();
+			systemArea.setId("system-area");
+			systemArea.setEditable(false);
+			systemArea.setWrapText(true);
 			
+			TextArea memoryArea = new TextArea();
+			memoryArea.setId("info-area");
+			memoryArea.setEditable(false);
+			memoryArea.setWrapText(true);
+			
+			SplitPane content = new SplitPane(systemArea,memoryArea);
+			content.setOrientation(Orientation.VERTICAL);
+			
+			// display system properties
+			Thread systemThread = new Thread(){
+				Properties pro;
+				
+				public void run(){
+					
+					systemArea.appendText(
+			    			"Obtaining system properties..." + 
+	    					System.lineSeparator() + System.lineSeparator()
+    					);
+					
+					pro = System.getProperties();
+				    for(Object obj : pro.keySet()){
+				    	systemArea.appendText(
+	    					(String)obj + ": " + System.lineSeparator() +
+							System.getProperty((String)obj) + 
+	    					System.lineSeparator() + System.lineSeparator()
+    					);
+				    }
+				    
+				    Thread.currentThread().interrupt();
+					systemArea.appendText(
+						System.lineSeparator() + 
+						"Checking if thread is interrupted: " + 
+						System.lineSeparator() +
+						"Interrupted: " +
+						Thread.currentThread().isInterrupted()
+					);
+					return;
+					
+				}
+				
+			};
+			systemThread.start();
+			
+			// actively display system memory
 			Thread memoryThread = new Thread(){
 				long memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 				long spike = memory,fall = memory;
@@ -83,8 +130,8 @@ public class ConsoleTools {
 							memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 							if(fall > memory){fall = memory;}
 							if(spike < memory){spike = memory;}
-							infoArea.clear();
-							infoArea.appendText(
+							memoryArea.clear();
+							memoryArea.appendText(
 								"☆ Memory usage: " + System.lineSeparator() +
 								"  • Bytes: " + String.valueOf(memory) + System.lineSeparator() +
 								"  • KB: " + String.valueOf(memory/1024) + System.lineSeparator() +
@@ -107,7 +154,7 @@ public class ConsoleTools {
 							StringWriter error = new StringWriter();
 							e.printStackTrace(new PrintWriter(error));
 							
-							infoArea.appendText(
+							memoryArea.appendText(
 								System.lineSeparator() +
 								"-- Error occured --" + System.lineSeparator() +
 								error.toString() + 
@@ -117,7 +164,7 @@ public class ConsoleTools {
 						}
 					}
 					
-					infoArea.appendText(
+					memoryArea.appendText(
 						System.lineSeparator() +
 						"-- Function terminated --" + 
 						System.lineSeparator() +
@@ -125,19 +172,19 @@ public class ConsoleTools {
 					);
 					
 					Thread.currentThread().interrupt();
-					infoArea.appendText(
+					memoryArea.appendText(
 						System.lineSeparator() + 
 						"Checking if thread is interrupted: " + 
 						System.lineSeparator() +
 						"Interrupted: " +
 						Thread.currentThread().isInterrupted()
 					);
-					
+					return;
 				}
 			};
 			memoryThread.start();
 			
-			info.setContent(infoArea);
+			info.setContent(content);
 			return info;
 		}
 		
@@ -154,27 +201,27 @@ public class ConsoleTools {
 			ipArea.setPromptText(
 				"Press enter to show ip data," +
 				System.lineSeparator() +
-				"this will run first display your external ip then run 'ipconfig /all' or 'ifconfig -a' depending on OS."
+				"this will first display your external ip then run 'ipconfig /all' or 'ifconfig -a' depending on OS."
 			);
 			
 			
 			ExecutorService executor = Executors.newFixedThreadPool(1);
-			
+
 			// get ip address (public and ipconfig / ifconfig depending on OS)
-			Runnable ipThread = new Runnable() {
-        		
-				BufferedReader stdInput;
-    			ProcessBuilder pb;
-    			String line;
-    			boolean ipRunning = false;
-				
-    			@Override
-        		public void run(){
-    				EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
-			            public void handle(final KeyEvent keyEvent) {
-			                if (keyEvent.getCode() == KeyCode.ENTER && !ipRunning) {
+			EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
+	            public void handle(final KeyEvent keyEvent) {
+	                if (keyEvent.getCode() == KeyCode.ENTER && !ipRunning) {
+	                	Runnable ipThread = new Runnable() {
+	                		
+	        				BufferedReader stdInput;
+	            			ProcessBuilder pb;
+	            			String line;
+	        				
+	            			@Override
+	                		public void run(){
 			                	ipRunning = true;
 			    				try{
+			    					ipArea.clear();
 			    					ipArea.appendText(
 										"-- Public ip --" + 
 				    					System.lineSeparator() + 
@@ -209,7 +256,7 @@ public class ConsoleTools {
 										"Interrupted: " +
 										Thread.currentThread().isInterrupted()
 									);
-					            	stdInput.close();
+					            	if(stdInput != null){try {stdInput.close();} catch (IOException e1) {e1.printStackTrace();}}
 					            	ipRunning = false;
 									return;
 									
@@ -232,14 +279,12 @@ public class ConsoleTools {
 									return;
 			    				}
 			                }
-			            }
-    				};
-    				ipArea.setOnKeyPressed(executeCommand);
-    			}
-    			
+	                	};
+	                	executor.execute(ipThread);
+	                }
+	            }
 			};
-			
-			executor.execute(ipThread);
+			ipArea.setOnKeyPressed(executeCommand);
 			
 			ip.setContent(ipArea);
 			return ip;
@@ -434,6 +479,7 @@ public class ConsoleTools {
 		private TabPane subTabs = new TabPane();
 		boolean lookupNotRunning = true;
 		boolean scrapegoatNotRunning = true;
+		Runnable jsoupThread;
 		
 		// cross class variables
 		private TabPane tabMaster;
@@ -790,7 +836,6 @@ public class ConsoleTools {
 			return free;
 		}
 		
-		// TODO:
 		// jsoup tool
 		private Tab scrapeGoat(){
 			
@@ -815,35 +860,72 @@ public class ConsoleTools {
 			output.setWrapText(true);
 			
 			// element to obtain
-			//TextField specifiedItem = new TextField();
-			//specifiedItem.setPromptText("Selector, Directly linked to Jsoup select functionality.");
+			TextField specifiedItem = new TextField();
+			specifiedItem.setId("scrapegoat-selector-input");
+			specifiedItem.setPromptText("Selector, Directly linked to Jsoup select functionality.");
 			
-			container.setTop(specifiedUrl);
+			container.setTop(new SplitPane(specifiedUrl,specifiedItem));
 			container.setCenter(output);
 			
 			ExecutorService executor = Executors.newFixedThreadPool(1);
 			
-			Runnable jsoupThread = new Runnable() {
-				String url,item;
-				
-				@Override
-				public void run(){
-					// execute on enter click
-					EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
-			            public void handle(final KeyEvent keyEvent) {
-			                if (keyEvent.getCode() == KeyCode.ENTER && scrapegoatNotRunning) {
+			// execute on enter click
+			EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
+	            public void handle(final KeyEvent keyEvent) {
+	                if (keyEvent.getCode() == KeyCode.ENTER && scrapegoatNotRunning) {
+	                	jsoupThread = new Runnable() {
+	        				Document doc;
+	        				Elements items;
+	        				String url,item;
+	        				
+	        				@Override
+	        				public void run(){
 			                	output.clear();
 			                	scrapegoatNotRunning = false;
 			                    url = specifiedUrl.getText().trim();
-	     					    //item = specifiedItem.getText().trim();
+	     					    item = specifiedItem.getText().trim();
+	     					    specifiedUrl.clear();
+			                	specifiedItem.clear();
 			                	
 			                	try{
 			                		
 			                		if(url != null && !url.equals("")){
 			                			if(item != null && !item.equals("")){
+			                				try{
+				                				doc = Jsoup.connect(url).get();
+				                				
+				                				items = doc.select(item);
+				                				
+				                				if(items != null){
+				                					output.appendText(items.toString() + System.lineSeparator());
+				                				}
+				                				
+				                				Thread.currentThread().interrupt();
+												output.appendText(
+													System.lineSeparator() + System.lineSeparator() +
+													"Checking if thread is interrupted.." + 
+													System.lineSeparator() +
+													"Interrupted: " +
+													Thread.currentThread().isInterrupted()
+												);
+												scrapegoatNotRunning = true;
+												return;
+				                				
+			                				}catch(Exception e){
+			                					Thread.currentThread().interrupt();
+												output.appendText(
+													System.lineSeparator() + System.lineSeparator() +
+													"Checking if thread is interrupted.." + 
+													System.lineSeparator() +
+													"Interrupted: " +
+													Thread.currentThread().isInterrupted()
+												);
+												scrapegoatNotRunning = true;
+												return;
+			                				}
 			                				
 			                			} else{
-			                				Document doc = Jsoup.connect(url).get();
+			                				doc = Jsoup.connect(url).get();
 			                				output.appendText(doc.toString());
 			                				
 			                				Thread.currentThread().interrupt();
@@ -894,14 +976,14 @@ public class ConsoleTools {
 			                	}
 			                	
 			                }
-			            }
-					};
-					specifiedUrl.setOnKeyPressed(executeCommand);
-					//specifiedItem.setOnKeyPressed(executeCommand);
-					
-				}
+						};
+						executor.execute(jsoupThread);
+	                	
+	                }
+	            }
 			};
-			executor.execute(jsoupThread);
+			specifiedUrl.setOnKeyPressed(executeCommand);
+			specifiedItem.setOnKeyPressed(executeCommand);
 			
 			jsoup.setContent(container);
 			return jsoup;

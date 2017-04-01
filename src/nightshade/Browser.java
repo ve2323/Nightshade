@@ -38,7 +38,7 @@ public class Browser{
 	private boolean stageMaxed = true;
 	private double xOffset,yOffset;
 	String location;
-	Rectangle2D primaryScreenBounds;
+	Rectangle2D primaryScreenBounds = Screen.getPrimary().getVisualBounds();
 	
 	// cross class variables
 	private BorderPane contentPane;
@@ -252,10 +252,16 @@ public class Browser{
             public void handle(ActionEvent actionEvent) {
             	if(stageMaxed){
             		stageMaxed = false;
-            		primarystage.setMaximized(false);
+            		primarystage.setWidth(700);
+            		primarystage.setHeight(600);
+            		primarystage.setX((primaryScreenBounds.getWidth()/2)-(primarystage.getWidth()/2));
+            		primarystage.setY((primaryScreenBounds.getHeight()/2)-(primarystage.getHeight()/2));
             	} else{
             		stageMaxed = true;
-            		primarystage.setMaximized(true);
+            		primarystage.setWidth(primaryScreenBounds.getWidth());
+            		primarystage.setHeight(primaryScreenBounds.getHeight());
+            		primarystage.setX(0);
+            		primarystage.setY(0);
             	}
             }
         });
@@ -331,9 +337,18 @@ public class Browser{
             	// if mouse position+5 is more or equal to max screen bounds
             	// or if mouse position-5 is less or equal to min screen bounds
             	// make stage maximized
-            	if((event.getScreenX()+10) >= primaryScreenBounds.getMaxX() || (event.getScreenX()-10) <= primaryScreenBounds.getMinX()){
+            	if((event.getScreenX()-10) <= primaryScreenBounds.getMinX()){
             		stageMaxed = true;
-            		primarystage.setMaximized(true);
+            		primarystage.setWidth(primaryScreenBounds.getWidth()/2);
+            		primarystage.setHeight(primaryScreenBounds.getHeight());
+            		primarystage.setX(0);
+            		primarystage.setY(0);
+            	} if((event.getScreenX()+10) >= primaryScreenBounds.getMaxX()){
+            		stageMaxed = true;
+            		primarystage.setWidth(primaryScreenBounds.getWidth()/2);
+            		primarystage.setHeight(primaryScreenBounds.getHeight());
+            		primarystage.setX(primaryScreenBounds.getMaxX()/2);
+            		primarystage.setY(0);
             	}
             	
             	// y position
@@ -342,7 +357,10 @@ public class Browser{
             	// make stage maximized
             	if((event.getScreenY()+10) >= primaryScreenBounds.getMaxY() || (event.getScreenY()-10) <= primaryScreenBounds.getMinY()){
             		stageMaxed = true;
-            		primarystage.setMaximized(true);
+            		primarystage.setWidth(primaryScreenBounds.getWidth());
+            		primarystage.setHeight(primaryScreenBounds.getHeight());
+            		primarystage.setX(0);
+            		primarystage.setY(0);
             	}
             }
         });

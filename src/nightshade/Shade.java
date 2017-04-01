@@ -1,10 +1,12 @@
 package nightshade;
 
 import javafx.application.Application;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
  
@@ -15,9 +17,10 @@ public class Shade extends Application {
     	
         primarystage.setTitle("Nightshade");
         primarystage.getIcons().add(new Image("/assets/nightshade_stage.png"));
-        primarystage.setMaximized(true);
         primarystage.initStyle(StageStyle.UNDECORATED);
-        Scene scene = new Scene(new Group());
+        primarystage.setResizable(true);
+        Rectangle2D primaryScreenBounds = Screen.getPrimary().getVisualBounds();
+        Scene scene = new Scene(new Group(),primaryScreenBounds.getWidth(),primaryScreenBounds.getHeight());
         scene.getStylesheets().add("/assets/shade.css");
         
         // main container
