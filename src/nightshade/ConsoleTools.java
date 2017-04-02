@@ -14,6 +14,7 @@ import java.net.URLConnection;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -513,6 +514,10 @@ public class ConsoleTools {
 		}
 		
 		// allow domain lookup
+		// TODO: 
+    	// breaks at random with nullpointer
+    	// breaks at random with indexarrayoutofbounds -1
+    	// sometimes stops on a process indefinitely
 		private Tab lookup(){
 			
 			Tab lookup = new Tab();
@@ -544,18 +549,30 @@ public class ConsoleTools {
 			pingOutput.setWrapText(true);
 			pingOutput.setEditable(false);
 			
-			SplitPane dividerOne = new SplitPane(ipOutput,pingOutput);
-			dividerOne.setOrientation(Orientation.VERTICAL);
+			TextArea traceOutput = new TextArea();
+			traceOutput.setPromptText(
+				"this area will show any and all output from input route trace" + 
+				System.lineSeparator()
+			);
+			traceOutput.setId("trace-output");
+			traceOutput.setWrapText(true);
+			traceOutput.setEditable(false);
+			
+			SplitPane dividerOne = new SplitPane(pingOutput,traceOutput);
+			SplitPane dividerTwo = new SplitPane(ipOutput,dividerOne);
+			dividerTwo.setOrientation(Orientation.VERTICAL);
 			
 			lookupContainer.setTop(inputField);
-			lookupContainer.setCenter(dividerOne);
-			
-			ExecutorService executor = Executors.newFixedThreadPool(1);
+			lookupContainer.setCenter(dividerTwo);
 			
 			EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
 	            public void handle(final KeyEvent keyEvent) {
 	                if (keyEvent.getCode() == KeyCode.ENTER && lookupNotRunning) {
 	                	lookupNotRunning = false;
+	                	
+	                	ExecutorService executor = Executors.newFixedThreadPool(2);
+	                	
+	                	// look up address
 	                	Thread lookupThread = new Thread(){
 	                		
 	                		InetAddress[] allInetAddress;
@@ -608,6 +625,7 @@ public class ConsoleTools {
 	                		}
 	                	};
 	                	
+	                	//ping address
 	                	Runnable pingThread = new Runnable() {
 	                		
 	                		InetAddress[] allInetAddress;
@@ -640,24 +658,13 @@ public class ConsoleTools {
 						                    while (!stdInput.ready()){ /* wait until ready */ }
 				                    		
 											while ((line = stdInput.readLine()) != null){
-												if(line != null){
-													pingOutput.appendText(line + "\n");
-												}
+												pingOutput.appendText(line + "\n");
 											}
 						                    
 				            			}
-					                    
-					                    Thread.currentThread().interrupt();
-										pingOutput.appendText(
-											System.lineSeparator() + System.lineSeparator() +
-											"Checking if thread is interrupted.." + 
-											System.lineSeparator() +
-											"Interrupted: " +
-											Thread.currentThread().isInterrupted()
-										);
-										lookupNotRunning = true;
+				            			
 										stdInput.close();
-										return;
+										
 						            } else{
 						            	
 						            	pingOutput.appendText(
@@ -672,22 +679,10 @@ public class ConsoleTools {
 					                    while (!stdInput.ready()){ /* wait until ready */ }
 			
 					                    while ((line = stdInput.readLine()) != null){
-					                    	if(line != null){
-					                    		pingOutput.appendText(line);
-					                    	}
+				                    		pingOutput.appendText(line);
 					                    }
 					                    
-					                    Thread.currentThread().interrupt();
-										pingOutput.appendText(
-											System.lineSeparator() + System.lineSeparator() + 
-											"Checking if thread is interrupted.." + 
-											System.lineSeparator() +
-											"Interrupted: " +
-											Thread.currentThread().isInterrupted()
-										);
-										lookupNotRunning = true;
 										stdInput.close();
-										return;
 					                    
 						            }
 				            		
@@ -699,26 +694,121 @@ public class ConsoleTools {
 									pingOutput.appendText(error.toString());
 									
 									// make absolutely sure the stream closes with the thread on exception
-									if(stdInput != null){
-										try {stdInput.close();} catch (IOException ex) {/* do nothing */}
-									}
+									if(stdInput != null){try {stdInput.close();} catch (IOException ex) {/* do nothing */}}
 									
-									Thread.currentThread().interrupt();
-									pingOutput.appendText(
-										System.lineSeparator() + System.lineSeparator() + 
-										"Checking if thread is interrupted.." + 
-										System.lineSeparator() +
-										"Interrupted: " +
-										Thread.currentThread().isInterrupted()
-									);
-									lookupNotRunning = true;
-									return;
+			                	}
+	                		}
+	                	};
+	                	
+	                	// traceroute address
+                		Runnable traceThread = new Runnable() {
+	                		
+	                		InetAddress[] allInetAddress;
+	            			String input = null;
+	            			String line,currentIp;
+	            			BufferedReader stdInput;
+	            			ProcessBuilder pb;
+	                		
+	            			@Override
+	                		public void run(){
+	                			traceOutput.clear();
+								try{
+			            			input = inputField.getText().trim();
+			            			
+				            		if(isHostname(input)){
+				            			allInetAddress = java.net.InetAddress.getAllByName(input);
+				            			for(int i=0; i<allInetAddress.length; i++){
+				            				
+				            				currentIp = allInetAddress[i].toString().split("/")[1];
+				            				
+				            				traceOutput.appendText(
+					                    		System.lineSeparator() + System.lineSeparator() +
+					                    		"-- Traceroute " + currentIp + " --" +
+					                    		System.lineSeparator()
+				                    		);
+				                    		
+				            				if(System.getProperty("os.name").toLowerCase().contains("win")){
+					    						pb = new ProcessBuilder("tracert", currentIp);
+					    					} else if(System.getProperty("os.name").toLowerCase().contains("nux")){
+					    						pb = new ProcessBuilder("traceroute", currentIp);
+					    					}
+				            				
+						                    stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));
+						                    
+						                    while (!stdInput.ready()){ /* wait until ready */ }
+				                    		
+											while ((line = stdInput.readLine()) != null){
+												traceOutput.appendText(line + "\n");
+											}
+						                    
+				            			}
+					                    
+										stdInput.close();
+										
+						            } else{
+						            	
+						            	traceOutput.appendText(
+				                    		System.lineSeparator() +
+				                    		"-- Traceroute " + input + " --" +
+				                    		System.lineSeparator()
+			                    		);
+						            	
+						            	if(System.getProperty("os.name").toLowerCase().contains("win")){
+				    						pb = new ProcessBuilder("tracert", currentIp);
+				    					} else if(System.getProperty("os.name").toLowerCase().contains("nux")){
+				    						pb = new ProcessBuilder("traceroute", currentIp);
+				    					}
+						            	
+					                    stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));        
+			
+					                    while (!stdInput.ready()){ /* wait until ready */ }
+			
+					                    while ((line = stdInput.readLine()) != null){
+				                    		traceOutput.appendText(line);
+					                    }
+					                    
+										stdInput.close();
+					                    
+						            }
+				            		
+			                	} catch(Exception e){
+			                		// write stack trace to string and append to text area
+									StringWriter error = new StringWriter();
+									e.printStackTrace(new PrintWriter(error));
+									
+									traceOutput.appendText(error.toString());
+									
+									// make absolutely sure the stream closes with the thread on exception
+									if(stdInput != null){try {stdInput.close();} catch (IOException ex) {/* do nothing */}}
+									
 			                	}
 	                		}
 	                	};
 	                	
 	                	lookupThread.start();
-						executor.execute(pingThread);
+	                	executor.submit(pingThread);
+	                	executor.submit(traceThread);
+	                	executor.shutdown();
+	                	
+	                	// await termination
+	                	Thread test = new Thread(){
+	                		public void run(){
+	                			try {
+	    							executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+	    							System.out.println("complete");
+	    							Thread.currentThread().interrupt();
+									lookupNotRunning = true;
+									return;
+	    						} catch (InterruptedException e) {
+									e.printStackTrace();
+									Thread.currentThread().interrupt();
+									lookupNotRunning = true;
+									return;
+	    						}
+	                		}
+	                	};
+	                	test.start();
+	                	
 	                }
 	            }
 	        };
