@@ -20,7 +20,7 @@ This project is built to allow additional functionality to be implemented with e
 * * Traceroute all found ip-addresses
 * View current page ip-address
 * Get system ip information
-* Scrape websites(created using Jsoup functionality)
+* Scrape websites(created using Jsoup functionality):
 * * Get everything by specifying domain
 * * Get select content by specifying tag
 * Firebug toolset
