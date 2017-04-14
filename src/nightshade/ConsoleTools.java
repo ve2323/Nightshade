@@ -87,7 +87,7 @@ public class ConsoleTools {
 			
 			// display system properties
 			Thread systemThread = new Thread(){
-				Properties pro;
+				Properties pro = System.getProperties();
 				
 				public void run(){
 					
@@ -161,6 +161,7 @@ public class ConsoleTools {
 								error.toString() + 
 								"Breaking function..."
 							);
+							try {error.close();} catch (IOException e1) {e1.printStackTrace();}
 							break;
 						}
 					}
@@ -205,24 +206,19 @@ public class ConsoleTools {
 				"this will first display your external ip then run 'ipconfig /all' or 'ifconfig -a' depending on OS."
 			);
 			
-			
-			ExecutorService executor = Executors.newFixedThreadPool(1);
-
 			// get ip address (public and ipconfig / ifconfig depending on OS)
 			EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
 	            public void handle(final KeyEvent keyEvent) {
 	                if (keyEvent.getCode() == KeyCode.ENTER && !ipRunning) {
+	                	ExecutorService executor = Executors.newSingleThreadExecutor();
 	                	Runnable ipThread = new Runnable() {
-	                		
-	        				BufferedReader stdInput;
-	            			ProcessBuilder pb;
-	            			String line;
 	        				
 	            			@Override
 	                		public void run(){
 			                	ipRunning = true;
 			    				try{
 			    					ipArea.clear();
+			    					ipArea.selectHome();
 			    					ipArea.appendText(
 										"-- Public ip --" + 
 				    					System.lineSeparator() + 
@@ -234,54 +230,52 @@ public class ConsoleTools {
 									);
 			    					
 			    					if(System.getProperty("os.name").toLowerCase().contains("win")){
-			    						pb = new ProcessBuilder("ipconfig","/all");
+			    						ProcessBuilder pb = new ProcessBuilder("ipconfig","/all");
+			    						
+			    						BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));
+					                    
+					                    while (!stdInput.ready()){ /* wait until ready */ }
+					            		
+					                    String line = "Null";
+					                    
+										while ((line = stdInput.readLine()) != null){ipArea.appendText(line + System.lineSeparator());}
+				    					
+						            	if(stdInput != null){try {stdInput.close();} catch (IOException e1) { /* do nothing */ }}
+						            	ipRunning = false;
+			    						
 			    					} else if(System.getProperty("os.name").toLowerCase().contains("nux")){
-			    						pb = new ProcessBuilder("ifconfig -a");
+			    						ProcessBuilder pb = new ProcessBuilder("ifconfig -a");
+			    						
+			    						BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));
+					                    
+					                    while (!stdInput.ready()){ /* wait until ready */ }
+					            		
+					                    String line = "Null";
+					                    
+										while ((line = stdInput.readLine()) != null){ipArea.appendText(line + System.lineSeparator());}
+				    					
+						            	if(stdInput != null){try {stdInput.close();} catch (IOException e1) { /* do nothing */ }}
+						            	ipRunning = false;
 			    					}
-									
-									stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));
-				                    
-				                    while (!stdInput.ready()){ /* wait until ready */ }
-				            		
-									while ((line = stdInput.readLine()) != null){
-										if(line != null){
-											ipArea.appendText(line + "\n");
-										}
-									}
-			    					
-									Thread.currentThread().interrupt();
-					            	ipArea.appendText(
-										System.lineSeparator() + 
-										"Checking if thread is interrupted.." + 
-										System.lineSeparator() +
-										"Interrupted: " +
-										Thread.currentThread().isInterrupted()
-									);
-					            	if(stdInput != null){try {stdInput.close();} catch (IOException e1) {e1.printStackTrace();}}
-					            	ipRunning = false;
-									return;
 									
 			    				} catch(Exception e){
 			    					StringWriter error = new StringWriter();
 									e.printStackTrace(new PrintWriter(error));
 									
 									ipArea.appendText(System.lineSeparator() + System.lineSeparator() + error.toString());
+									try {error.close();} catch (IOException e1) {e1.printStackTrace();}
 									
-									Thread.currentThread().interrupt();
-					            	ipArea.appendText(
-										System.lineSeparator() + 
-										"Checking if thread is interrupted.." + 
-										System.lineSeparator() +
-										"Interrupted: " +
-										Thread.currentThread().isInterrupted()
-									);
-					            	if(stdInput != null){try {stdInput.close();} catch (IOException e1) {e1.printStackTrace();}}
 					            	ipRunning = false;
-									return;
 			    				}
 			                }
 	                	};
 	                	executor.execute(ipThread);
+	                	executor.shutdown();
+	                	try {
+							executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 	                }
 	            }
 			};
@@ -371,9 +365,6 @@ public class ConsoleTools {
 			// run actions in separate thread
 			Thread freestyleThread = new Thread(){
 				
-				String commandString,errorOutput;
-				Thread freestyleOutput;
-				
 				public void run(){
 					
 					// execute on enter click
@@ -381,45 +372,50 @@ public class ConsoleTools {
 			            public void handle(final KeyEvent keyEvent) {
 			                if (keyEvent.getCode() == KeyCode.ENTER && !freestyleRunning) {
 			                	freestyleRunning = true;
-			                	commandString = command.getText();
+			                	String commandString = command.getText();
 			                	command.clear();
-			                	
-			                	freestyleOutput = new Thread(){
+			                	command.selectHome();
+			                	Thread freestyleOutput = new Thread(){
 			                		
 			                		public void run(){
 										try {
 											output.clear();
-											Process process = Runtime.getRuntime().exec(commandString);
-											process.waitFor();
+											output.selectHome();
 											
-											output.appendText("-- Executing command --" + System.lineSeparator());
+											output.appendText("-- Executing system command --" + System.lineSeparator());
 											output.appendText("Command: " + commandString + System.lineSeparator() + System.lineSeparator());
 											
-											String line;
+											if(!commandString.equals("") && !commandString.equals(null)){
+												Process process = Runtime.getRuntime().exec(commandString);
+												process.waitFor();
+												
+												String line = "Null";
 
-											BufferedReader error = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-											while((line = error.readLine()) != null){
-												output.appendText(line + System.lineSeparator());
+												BufferedReader error = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+												while((line = error.readLine()) != null){
+													output.appendText(line + System.lineSeparator());
+												}
+												error.close();
+
+												BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
+												while((line=input.readLine()) != null){
+													output.appendText(line + System.lineSeparator());
+												}
+												input.close();
+
+												OutputStream outputStream = process.getOutputStream();
+												PrintStream printStream = new PrintStream(outputStream);
+												
+												// various data
+												output.appendText(System.lineSeparator() + "-- System check --");
+												output.appendText(System.lineSeparator() + "stream I/O: " + printStream.toString());
+												output.appendText(System.lineSeparator() + "Thread: " + Thread.currentThread().getName());
+												output.appendText(System.lineSeparator() + "Action complete, attempting to interrupt thread...");
+												
+												printStream.flush();
+												printStream.close();
 											}
-											error.close();
-
-											BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
-											while((line=input.readLine()) != null){
-												output.appendText(line + System.lineSeparator());
-											}
-											input.close();
-
-											OutputStream outputStream = process.getOutputStream();
-											PrintStream printStream = new PrintStream(outputStream);
 											
-											// various data
-											output.appendText(System.lineSeparator() + "-- System check --");
-											output.appendText(System.lineSeparator() + "stream I/O: " + printStream.toString());
-											output.appendText(System.lineSeparator() + "Thread: " + Thread.currentThread().getName());
-											output.appendText(System.lineSeparator() + "Action complete, attempting to interrupt thread...");
-											
-											printStream.flush();
-											printStream.close();
 											
 											Thread.currentThread().interrupt();
 											output.appendText(
@@ -434,10 +430,11 @@ public class ConsoleTools {
 											
 										} catch (IOException | InterruptedException e) {
 											output.clear();
+											output.selectHome();
 											// write stack trace to string and append to text area
 											StringWriter error = new StringWriter();
 											e.printStackTrace(new PrintWriter(error));
-											errorOutput = error.toString();
+											String errorOutput = error.toString();
 											
 											output.appendText(errorOutput);
 											
@@ -514,10 +511,6 @@ public class ConsoleTools {
 		}
 		
 		// allow domain lookup
-		// TODO: 
-    	// breaks at random with nullpointer
-    	// breaks at random with indexarrayoutofbounds -1
-    	// sometimes stops on a process indefinitely
 		private Tab lookup(){
 			
 			Tab lookup = new Tab();
@@ -575,19 +568,16 @@ public class ConsoleTools {
 	                	// look up address
 	                	Thread lookupThread = new Thread(){
 	                		
-	                		InetAddress[] allInetAddress;
-	            			String input = null;
-	            			String errorOutput = null;
-	                		
 	                		public void run(){
 	                			ipOutput.clear();
+	                			ipOutput.selectHome();
 	    						try {
-	    							input = inputField.getText().trim();
+	    							String input = inputField.getText().trim();
 	    				            
 	    				            ipOutput.appendText("Looking up ip for: " + input + System.lineSeparator());
 	    				            
 	    				            if(isHostname(input)){
-	    				            	allInetAddress = java.net.InetAddress.getAllByName(input);
+	    				            	InetAddress[] allInetAddress = java.net.InetAddress.getAllByName(input);
 	    				            	for(int i=0; i<allInetAddress.length; i++){
 	    					                ipOutput.appendText(" • " + allInetAddress[i].toString().split("/")[1] + System.lineSeparator());
 	    					            }
@@ -609,9 +599,10 @@ public class ConsoleTools {
 	    							// write stack trace to string and append to text area
 	    							StringWriter error = new StringWriter();
 	    							e.printStackTrace(new PrintWriter(error));
-	    							errorOutput = error.toString();
+	    							String errorOutput = error.toString();
 	    							
 	    							ipOutput.appendText(errorOutput);
+	    							try {error.close();} catch (IOException e1) {e1.printStackTrace();}
 	    							Thread.currentThread().interrupt();
 	    							ipOutput.appendText(
 	    								System.lineSeparator() + 
@@ -628,23 +619,18 @@ public class ConsoleTools {
 	                	//ping address
 	                	Runnable pingThread = new Runnable() {
 	                		
-	                		InetAddress[] allInetAddress;
-	            			String input = null;
-	            			String line,currentIp;
-	            			BufferedReader stdInput;
-	            			ProcessBuilder pb;
-	                		
 	            			@Override
 	                		public void run(){
 	                			pingOutput.clear();
+	                			pingOutput.selectHome();
 								try{
-			            			input = inputField.getText().trim();
+			            			String input = inputField.getText().trim();
 			            			
 				            		if(isHostname(input)){
-				            			allInetAddress = java.net.InetAddress.getAllByName(input);
+				            			InetAddress[] allInetAddress = java.net.InetAddress.getAllByName(input);
 				            			for(int i=0; i<allInetAddress.length; i++){
 				            				
-				            				currentIp = allInetAddress[i].toString().split("/")[1];
+				            				String currentIp = allInetAddress[i].toString().split("/")[1];
 				            				
 				            				pingOutput.appendText(
 					                    		System.lineSeparator() + System.lineSeparator() +
@@ -652,18 +638,20 @@ public class ConsoleTools {
 					                    		System.lineSeparator()
 				                    		);
 				                    		
-				            				pb = new ProcessBuilder("ping", currentIp);
-						                    stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));
+				            				ProcessBuilder pb = new ProcessBuilder("ping", currentIp);
+				            				BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));
 						                    
 						                    while (!stdInput.ready()){ /* wait until ready */ }
+						                    
+						                    String line = "Null";
 				                    		
 											while ((line = stdInput.readLine()) != null){
 												pingOutput.appendText(line + "\n");
 											}
+											
+											stdInput.close();
 						                    
 				            			}
-				            			
-										stdInput.close();
 										
 						            } else{
 						            	
@@ -673,10 +661,12 @@ public class ConsoleTools {
 				                    		System.lineSeparator()
 			                    		);
 						            	
-						            	pb = new ProcessBuilder("ping", input);
-					                    stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));        
+						            	ProcessBuilder pb = new ProcessBuilder("ping", input);
+						            	BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));        
 			
 					                    while (!stdInput.ready()){ /* wait until ready */ }
+					                    
+					                    String line = "Null";
 			
 					                    while ((line = stdInput.readLine()) != null){
 				                    		pingOutput.appendText(line);
@@ -692,9 +682,7 @@ public class ConsoleTools {
 									e.printStackTrace(new PrintWriter(error));
 									
 									pingOutput.appendText(error.toString());
-									
-									// make absolutely sure the stream closes with the thread on exception
-									if(stdInput != null){try {stdInput.close();} catch (IOException ex) {/* do nothing */}}
+									try {error.close();} catch (IOException e1) {e1.printStackTrace();}
 									
 			                	}
 	                		}
@@ -703,49 +691,52 @@ public class ConsoleTools {
 	                	// traceroute address
                 		Runnable traceThread = new Runnable() {
 	                		
-	                		InetAddress[] allInetAddress;
-	            			String input = null;
-	            			String line,currentIp;
-	            			BufferedReader stdInput;
-	            			ProcessBuilder pb;
-	                		
 	            			@Override
 	                		public void run(){
 	                			traceOutput.clear();
+	                			traceOutput.selectHome();
 								try{
-			            			input = inputField.getText().trim();
+			            			String input = inputField.getText().trim();
+			            			
+			            			String commandValue = "Null";
+					            	if(System.getProperty("os.name").toLowerCase().contains("win")){
+					            		commandValue = "tracert";
+					            	} else if(System.getProperty("os.name").toLowerCase().contains("nux")){
+					            		commandValue = "traceroute";
+					            	}
 			            			
 				            		if(isHostname(input)){
-				            			allInetAddress = java.net.InetAddress.getAllByName(input);
+				            			InetAddress[] allInetAddress = java.net.InetAddress.getAllByName(input);
 				            			for(int i=0; i<allInetAddress.length; i++){
 				            				
-				            				currentIp = allInetAddress[i].toString().split("/")[1];
+				            				String currentIp = allInetAddress[i].toString().split("/")[1];
 				            				
 				            				traceOutput.appendText(
 					                    		System.lineSeparator() + System.lineSeparator() +
 					                    		"-- Traceroute " + currentIp + " --" +
 					                    		System.lineSeparator()
 				                    		);
-				                    		
-				            				if(System.getProperty("os.name").toLowerCase().contains("win")){
-					    						pb = new ProcessBuilder("tracert", currentIp);
-					    					} else if(System.getProperty("os.name").toLowerCase().contains("nux")){
-					    						pb = new ProcessBuilder("traceroute", currentIp);
-					    					}
 				            				
-						                    stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));
+			            					ProcessBuilder pb = new ProcessBuilder(commandValue, currentIp);
+				    						
+				    						BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));
 						                    
 						                    while (!stdInput.ready()){ /* wait until ready */ }
+						                    
+						                    String line = "Null";
 				                    		
 											while ((line = stdInput.readLine()) != null){
 												traceOutput.appendText(line + "\n");
 											}
+											
+											stdInput.close();
+				            				
 						                    
 				            			}
-					                    
-										stdInput.close();
 										
 						            } else{
+						            	
+						            	String currentIp = input;
 						            	
 						            	traceOutput.appendText(
 				                    		System.lineSeparator() +
@@ -753,15 +744,13 @@ public class ConsoleTools {
 				                    		System.lineSeparator()
 			                    		);
 						            	
-						            	if(System.getProperty("os.name").toLowerCase().contains("win")){
-				    						pb = new ProcessBuilder("tracert", currentIp);
-				    					} else if(System.getProperty("os.name").toLowerCase().contains("nux")){
-				    						pb = new ProcessBuilder("traceroute", currentIp);
-				    					}
-						            	
-					                    stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));        
-			
+			    						ProcessBuilder pb = new ProcessBuilder(commandValue, currentIp);
+			    						
+			    						BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));        
+			    						
 					                    while (!stdInput.ready()){ /* wait until ready */ }
+					                    
+					                    String line = "Null";
 			
 					                    while ((line = stdInput.readLine()) != null){
 				                    		traceOutput.appendText(line);
@@ -777,9 +766,7 @@ public class ConsoleTools {
 									e.printStackTrace(new PrintWriter(error));
 									
 									traceOutput.appendText(error.toString());
-									
-									// make absolutely sure the stream closes with the thread on exception
-									if(stdInput != null){try {stdInput.close();} catch (IOException ex) {/* do nothing */}}
+									try {error.close();} catch (IOException e1) {e1.printStackTrace();}
 									
 			                	}
 	                		}
@@ -791,11 +778,10 @@ public class ConsoleTools {
 	                	executor.shutdown();
 	                	
 	                	// await termination
-	                	Thread test = new Thread(){
+	                	Thread runChecker = new Thread(){
 	                		public void run(){
 	                			try {
 	    							executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-	    							System.out.println("complete");
 	    							Thread.currentThread().interrupt();
 									lookupNotRunning = true;
 									return;
@@ -807,7 +793,7 @@ public class ConsoleTools {
 	    						}
 	                		}
 	                	};
-	                	test.start();
+	                	runChecker.start();
 	                	
 	                }
 	            }
@@ -847,23 +833,21 @@ public class ConsoleTools {
 				// run actions in separate thread
 				Platform.runLater(new Runnable(){
 					
-					String commandString,errorOutput;
-					
 					public void run(){
 						
 						// execute on enter click
 						EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
 				            public void handle(final KeyEvent keyEvent) {
 				                if (keyEvent.getCode() == KeyCode.ENTER) {
-				                	commandString = command.getText();
+				                	String commandString = command.getText();
 				                	command.clear();
-				                	
+				                	command.selectHome();
 				                	Platform.runLater(new Runnable(){
 				                		
 				                		public void run(){
 											try {
 												output.clear();
-												
+												command.selectHome();
 												output.appendText("-- Executing javascript --" + System.lineSeparator());
 												output.appendText("Script: " + commandString + System.lineSeparator() + System.lineSeparator());
 												
@@ -886,13 +870,15 @@ public class ConsoleTools {
 												
 											} catch (Exception e) {
 												output.clear();
+												command.selectHome();
 												// write stack trace to string and append to text area
 												e.printStackTrace();
 												StringWriter error = new StringWriter();
 												e.printStackTrace(new PrintWriter(error));
-												errorOutput = error.toString();
+												String errorOutput = error.toString();
 												
 												output.appendText(errorOutput);
+												try {error.close();} catch (IOException e1) {e1.printStackTrace();}
 												
 												output.appendText(System.lineSeparator() + "Action complete, attempting to interrupt thread...");
 												
@@ -957,34 +943,33 @@ public class ConsoleTools {
 			container.setTop(new SplitPane(specifiedUrl,specifiedItem));
 			container.setCenter(output);
 			
-			ExecutorService executor = Executors.newFixedThreadPool(1);
-			
 			// execute on enter click
 			EventHandler<KeyEvent> executeCommand = new EventHandler<KeyEvent>() {
 	            public void handle(final KeyEvent keyEvent) {
 	                if (keyEvent.getCode() == KeyCode.ENTER && scrapegoatNotRunning) {
+	                	ExecutorService executor = Executors.newSingleThreadExecutor();
 	                	jsoupThread = new Runnable() {
-	        				Document doc;
-	        				Elements items;
-	        				String url,item;
 	        				
 	        				@Override
 	        				public void run(){
 			                	output.clear();
+			                	output.selectHome();
 			                	scrapegoatNotRunning = false;
-			                    url = specifiedUrl.getText().trim();
-	     					    item = specifiedItem.getText().trim();
+			                    String url = specifiedUrl.getText().trim();
+	     					    String item = specifiedItem.getText().trim();
 	     					    specifiedUrl.clear();
+	     					    specifiedUrl.selectHome();
 			                	specifiedItem.clear();
+			                	specifiedItem.selectHome();
 			                	
 			                	try{
 			                		
 			                		if(url != null && !url.equals("")){
 			                			if(item != null && !item.equals("")){
 			                				try{
-				                				doc = Jsoup.connect(url).get();
+				                				Document doc = Jsoup.connect(url).get();
 				                				
-				                				items = doc.select(item);
+				                				Elements items = doc.select(item);
 				                				
 				                				if(items != null){
 				                					output.appendText(items.toString() + System.lineSeparator());
@@ -1015,7 +1000,7 @@ public class ConsoleTools {
 			                				}
 			                				
 			                			} else{
-			                				doc = Jsoup.connect(url).get();
+			                				Document doc = Jsoup.connect(url).get();
 			                				output.appendText(doc.toString());
 			                				
 			                				Thread.currentThread().interrupt();
@@ -1046,11 +1031,13 @@ public class ConsoleTools {
 			                		
 			                	}catch(Exception e){
 			                		output.clear();
+			                		output.selectHome();
 									// write stack trace to string and append to text area
 									e.printStackTrace();
 									StringWriter error = new StringWriter();
 									e.printStackTrace(new PrintWriter(error));
 									output.appendText(error.toString());
+									try {error.close();} catch (IOException e1) {e1.printStackTrace();}
 			                		
 			                		Thread.currentThread().interrupt();
 									output.appendText(
@@ -1068,6 +1055,12 @@ public class ConsoleTools {
 			                }
 						};
 						executor.execute(jsoupThread);
+						executor.shutdown();
+						try {
+							executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 	                	
 	                }
 	            }
