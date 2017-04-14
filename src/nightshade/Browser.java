@@ -168,7 +168,7 @@ public class Browser{
 		if(address.contains(".")){
 			webEngine.load(address);
 		} else{
-			webEngine.load("https://www.google.se/search?q=" + address.replace(" ", "%20") + "&*");
+			webEngine.load("https://www.google.com/search?q=" + address.replace(" ", "%20") + "&*");
 		}
 	}
 	
